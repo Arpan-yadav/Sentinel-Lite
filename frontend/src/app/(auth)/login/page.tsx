@@ -8,7 +8,7 @@ import { ShieldAlert, Lock, Mail, ArrowRight } from "lucide-react";
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState("admin@sentinellite.local");
+  const [email, setEmail] = useState("admin@sentinellite.io");
   const [password, setPassword] = useState("AdminPass123!");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,7 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-4 border-t border-slate-800/60 text-center">
           <span className="text-[11px] text-slate-500 font-mono">
-            Demo Credentials: admin@sentinellite.local / AdminPass123!
+            Demo Credentials: admin@sentinellite.io / AdminPass123!
           </span>
         </div>
       </div>

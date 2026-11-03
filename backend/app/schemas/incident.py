@@ -42,7 +42,13 @@ class IncidentFilter(BaseModel):
     """Filter params for listing incidents."""
     status: str | None = None
     severity: str | None = None
+    search: str | None = None
+    min_risk_score: float | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
     page: int = 1
     page_size: int = 50
+
+    @property
+    def per_page(self) -> int:
+        return self.page_size

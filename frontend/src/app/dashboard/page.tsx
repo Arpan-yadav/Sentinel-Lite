@@ -9,7 +9,6 @@ import {
   Activity,
   AlertOctagon,
   AlertTriangle,
-  CheckCircle,
   Play,
   RefreshCw,
   ShieldAlert,
@@ -32,18 +31,11 @@ export default function DashboardPage() {
         api.get<{ severity: string; count: number }[]>("/analytics/severity-distribution"),
       ]);
 
-      if (statsRes.status === "fulfilled") {
-        setStats(statsRes.value.data);
-      }
-      if (incidentsRes.status === "fulfilled") {
-        setIncidents(incidentsRes.value.data);
-      }
+      if (statsRes.status === "fulfilled") setStats(statsRes.value.data);
+      if (incidentsRes.status === "fulfilled") setIncidents(incidentsRes.value.data);
       if (sevRes.status === "fulfilled") {
         setSeverityData(
-          sevRes.value.data.map((item) => ({
-            name: item.severity,
-            value: item.count,
-          }))
+          sevRes.value.data.map((item) => ({ name: item.severity, value: item.count }))
         );
       }
     } catch (err) {
@@ -63,33 +55,64 @@ export default function DashboardPage() {
       setDetectionMsg("");
       const res = await api.post("/detection/run?limit=1000&auto_correlate=true");
       setDetectionMsg(
-        `Detection finished: ${res.data.detection_summary?.alerts_created || 0} alerts, ${res.data.incidents_created || 0} incidents generated.`
+        `✓ Detection finished: ${res.data.detection_summary?.alerts_created || 0} alerts, ${res.data.incidents_created || 0} incidents generated.`
       );
       await fetchData();
     } catch {
-      setDetectionMsg("Failed to run detection pipeline. Ensure backend is running.");
+      setDetectionMsg("⚠ Failed to run detection pipeline. Ensure backend is running.");
     } finally {
       setDetecting(false);
     }
   };
 
+  const kpis = [
+    {
+      label: "Ingested Events",
+      value: stats?.total_events?.toLocaleString() ?? "0",
+      icon: Activity,
+      color: "text-blue-400",
+      bg: "bg-blue-500/10 border-blue-500/20",
+    },
+    {
+      label: "Active Alerts",
+      value: stats?.total_alerts?.toLocaleString() ?? "0",
+      icon: AlertTriangle,
+      color: "text-amber-400",
+      bg: "bg-amber-500/10 border-amber-500/20",
+    },
+    {
+      label: "Open Incidents",
+      value: String(stats?.open_incidents ?? "0"),
+      icon: ShieldAlert,
+      color: "text-orange-400",
+      bg: "bg-orange-500/10 border-orange-500/20",
+    },
+    {
+      label: "Critical Detections",
+      value: String(stats?.critical_alerts ?? "0"),
+      icon: AlertOctagon,
+      color: "text-red-400",
+      bg: "bg-red-500/10 border-red-500/20",
+    },
+  ];
+
   return (
     <div className="space-y-8">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
             SOC Operations Center
           </h1>
-          <p className="text-sm text-slate-400 mt-1 font-mono">
-            Real-time ML telemetry, threat detection, and AI investigation
+          <p className="text-sm text-[var(--foreground-muted)] mt-1 font-mono">
+            Real-time ML telemetry · threat detection · AI investigation
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={fetchData}
-            className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 transition-colors"
+            className="p-2.5 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground-muted)] transition-colors"
             title="Refresh telemetry"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -114,99 +137,63 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-mono text-slate-400 uppercase">Ingested Events</div>
-            <div className="text-2xl font-bold text-slate-100 mt-1">
-              {stats?.total_events.toLocaleString() || "0"}
+        {kpis.map(({ label, value, icon: Icon, color, bg }) => (
+          <div
+            key={label}
+            className="p-5 rounded-xl bg-[var(--background-card)] border border-[var(--border)] flex items-center justify-between hover:border-[var(--foreground-muted)] transition-colors"
+          >
+            <div>
+              <div className="text-xs font-mono text-[var(--foreground-muted)] uppercase">{label}</div>
+              <div className={`text-2xl font-bold mt-1 ${color}`}>{value}</div>
+            </div>
+            <div className={`h-10 w-10 rounded-lg border flex items-center justify-center ${bg} ${color}`}>
+              <Icon className="h-5 w-5" />
             </div>
           </div>
-          <div className="h-10 w-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-            <Activity className="h-5 w-5" />
-          </div>
-        </div>
-
-        <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-mono text-slate-400 uppercase">Active Alerts</div>
-            <div className="text-2xl font-bold text-slate-100 mt-1">
-              {stats?.total_alerts.toLocaleString() || "0"}
-            </div>
-          </div>
-          <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <AlertTriangle className="h-5 w-5" />
-          </div>
-        </div>
-
-        <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-mono text-slate-400 uppercase">Open Incidents</div>
-            <div className="text-2xl font-bold text-slate-100 mt-1">
-              {stats?.open_incidents || "0"}
-            </div>
-          </div>
-          <div className="h-10 w-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
-            <ShieldAlert className="h-5 w-5" />
-          </div>
-        </div>
-
-        <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-mono text-slate-400 uppercase">Critical Detections</div>
-            <div className="text-2xl font-bold text-red-400 mt-1">
-              {stats?.critical_alerts || "0"}
-            </div>
-          </div>
-          <div className="h-10 w-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-            <AlertOctagon className="h-5 w-5" />
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Main Grid: Severity Chart & Recent Incidents */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Severity Distribution */}
-        <div className="p-6 rounded-xl bg-slate-900/40 border border-slate-800">
-          <h2 className="text-sm font-bold text-slate-200 tracking-wide mb-1 uppercase font-mono">
+        {/* Severity Chart */}
+        <div className="p-6 rounded-xl bg-[var(--background-card)] border border-[var(--border)]">
+          <h2 className="text-sm font-bold text-[var(--foreground)] tracking-wide mb-1 uppercase font-mono">
             Incident Severity
           </h2>
-          <p className="text-xs text-slate-400 mb-4">Proportion by risk rating</p>
+          <p className="text-xs text-[var(--foreground-muted)] mb-4">Proportion by risk rating</p>
           <SeverityChart data={severityData} />
 
-          <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-xs font-mono">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-red-500"></span>
-              <span className="text-slate-400">Critical</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-orange-500"></span>
-              <span className="text-slate-400">High</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-              <span className="text-slate-400">Medium</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-              <span className="text-slate-400">Low</span>
-            </div>
+          <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-2 gap-2 text-xs font-mono">
+            {[
+              { color: "bg-red-500", label: "Critical" },
+              { color: "bg-orange-500", label: "High" },
+              { color: "bg-amber-500", label: "Medium" },
+              { color: "bg-emerald-500", label: "Low" },
+            ].map(({ color, label }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${color}`} />
+                <span className="text-[var(--foreground-muted)]">{label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Priority Incidents */}
-        <div className="lg:col-span-2 p-6 rounded-xl bg-slate-900/40 border border-slate-800">
+        {/* Recent Incidents */}
+        <div className="lg:col-span-2 p-6 rounded-xl bg-[var(--background-card)] border border-[var(--border)]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-bold text-slate-200 tracking-wide uppercase font-mono">
+              <h2 className="text-sm font-bold text-[var(--foreground)] tracking-wide uppercase font-mono">
                 Recent Security Incidents
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">Correlated from active network telemetry</p>
+              <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
+                Correlated from active network telemetry
+              </p>
             </div>
           </div>
 
           {incidents.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 font-mono text-xs border border-dashed border-slate-800 rounded-lg">
-              No incidents created yet. Click "Run ML Detection" or upload demo logs in Events.
+            <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-lg">
+              No incidents yet. Click &ldquo;Run ML Detection&rdquo; or upload demo logs in Events.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -220,4 +207,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

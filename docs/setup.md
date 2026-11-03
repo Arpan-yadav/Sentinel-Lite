@@ -39,8 +39,8 @@ python scripts/seed_db.py
 ```
 
 Default credentials:
-- **Admin**: `admin@sentinellite.local` / `AdminPass123!`
-- **Analyst**: `analyst@sentinellite.local` / `AnalystPass123!`
+- **Admin**: `admin@sentinellite.io` / `AdminPass123!`
+- **Analyst**: `analyst@sentinellite.io` / `AnalystPass123!`
 
 ---
 

@@ -12,7 +12,7 @@ def seed_system():
 
     # 1. Register admin user
     admin_payload = {
-        "email": "admin@sentinellite.local",
+        "email": "admin@sentinellite.io",
         "password": "AdminPass123!",
         "full_name": "Security Admin",
         "role": "admin",
@@ -20,7 +20,7 @@ def seed_system():
     try:
         resp = httpx.post(f"{API_BASE}/auth/register", json=admin_payload, timeout=10.0)
         if resp.status_code == 201:
-            print("Successfully registered default admin: admin@sentinellite.local")
+            print("Successfully registered default admin: admin@sentinellite.io")
         elif resp.status_code == 400 and "already exists" in resp.text:
             print("Admin user already registered.")
         else:
@@ -32,7 +32,7 @@ def seed_system():
     # 2. Login as admin
     login_resp = httpx.post(
         f"{API_BASE}/auth/login",
-        json={"email": "admin@sentinellite.local", "password": "AdminPass123!"},
+        json={"email": "admin@sentinellite.io", "password": "AdminPass123!"},
         timeout=10.0,
     )
     if login_resp.status_code != 200:
@@ -45,13 +45,13 @@ def seed_system():
 
     # 3. Register analyst
     analyst_payload = {
-        "email": "analyst@sentinellite.local",
+        "email": "analyst@sentinellite.io",
         "password": "AnalystPass123!",
         "full_name": "Tier-1 Analyst",
         "role": "analyst",
     }
     httpx.post(f"{API_BASE}/auth/register", json=analyst_payload, timeout=10.0)
-    print("Registered analyst account: analyst@sentinellite.local")
+    print("Registered analyst account: analyst@sentinellite.io")
 
     # 4. Upload demo dataset if available
     csv_path = "data/synthetic/demo_security_logs.csv"

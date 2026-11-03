@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { SecurityEvent } from "@/types";
 import { formatDateTime } from "@/lib/utils";
-import { Upload, Search, Filter, RefreshCw, FileText } from "lucide-react";
+import { Upload, Search, Filter } from "lucide-react";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
@@ -58,12 +58,12 @@ export default function EventsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
             Security Event Telemetry
           </h1>
-          <p className="text-sm text-slate-400 font-mono mt-1">
+          <p className="text-sm text-[var(--foreground-muted)] font-mono mt-1">
             Raw ingested packet flows, authentication records, and network telemetry
           </p>
         </div>
@@ -90,22 +90,22 @@ export default function EventsPage() {
       )}
 
       {/* Filter / Search Bar */}
-      <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--background-card)] border border-[var(--border)] shadow-sm">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-[var(--foreground-muted)]" />
           <input
             type="text"
             placeholder="Filter by Source IP (e.g. 192.168.1.10 or 185.220...)"
             value={searchIp}
             onChange={(e) => setSearchIp(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchEvents()}
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:outline-none text-xs text-slate-200 font-mono"
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs text-[var(--foreground)] font-mono"
           />
         </div>
 
         <button
           onClick={fetchEvents}
-          className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-2 transition-colors"
+          className="px-4 py-2 rounded-lg bg-[var(--background-muted)] hover:border-[var(--foreground-muted)] border border-[var(--border)] text-[var(--foreground)] text-xs font-mono flex items-center gap-2 transition-colors"
         >
           <Filter className="h-3.5 w-3.5" />
           Search
@@ -113,10 +113,10 @@ export default function EventsPage() {
       </div>
 
       {/* Events Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--background-card)] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 uppercase">
+            <thead className="bg-[var(--background-muted)] border-b border-[var(--border)] text-[var(--foreground-muted)] uppercase">
               <tr>
                 <th className="px-5 py-3 font-semibold">Timestamp</th>
                 <th className="px-5 py-3 font-semibold">Source Vector</th>
@@ -125,30 +125,30 @@ export default function EventsPage() {
                 <th className="px-5 py-3 font-semibold">Event Type</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-[var(--border)] text-[var(--foreground)]">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                  <td colSpan={5} className="p-8 text-center text-[var(--foreground-muted)]">
                     Loading event telemetry...
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                  <td colSpan={5} className="p-8 text-center text-[var(--foreground-muted)]">
                     No security events found. Ingest logs using the Upload button above.
                   </td>
                 </tr>
               ) : (
                 events.map((ev) => (
-                  <tr key={ev.id} className="hover:bg-slate-900/60 transition-colors">
-                    <td className="px-5 py-3 text-slate-400">{formatDateTime(ev.timestamp)}</td>
-                    <td className="px-5 py-3 font-semibold text-slate-200">{ev.source_ip}</td>
+                  <tr key={ev.id} className="hover:bg-[var(--background-muted)]/50 transition-colors">
+                    <td className="px-5 py-3 text-[var(--foreground-muted)]">{formatDateTime(ev.timestamp)}</td>
+                    <td className="px-5 py-3 font-semibold text-[var(--foreground)]">{ev.source_ip}</td>
                     <td className="px-5 py-3">{ev.dest_ip}</td>
-                    <td className="px-5 py-3 text-slate-400">
+                    <td className="px-5 py-3 text-[var(--foreground-muted)]">
                       {ev.protocol} / {ev.dest_port}
                     </td>
                     <td className="px-5 py-3">
-                      <span className="px-2 py-0.5 rounded bg-slate-800/80 text-emerald-400 text-[11px]">
+                      <span className="px-2 py-0.5 rounded bg-[var(--background-muted)] text-emerald-500 dark:text-emerald-400 text-[11px]">
                         {ev.event_type}
                       </span>
                     </td>
@@ -162,4 +162,3 @@ export default function EventsPage() {
     </div>
   );
 }
-

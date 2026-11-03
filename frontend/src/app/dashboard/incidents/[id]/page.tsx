@@ -13,7 +13,6 @@ import {
   FileSearch,
   ListChecks,
   Play,
-  Shield,
   XCircle,
 } from "lucide-react";
 
@@ -80,7 +79,6 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         approved,
         notes: `Reviewed by analyst on ${new Date().toISOString()}`,
       });
-      // Refresh recommendations
       const recRes = await api.get<Recommendation[]>(`/recommendations/incident/${incidentId}`);
       setRecommendations(recRes.data);
     } catch (err) {
@@ -90,7 +88,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
   if (loading || !incident) {
     return (
-      <div className="p-12 text-center text-slate-500 font-mono text-sm">
+      <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-sm">
         Loading incident telemetric record...
       </div>
     );
@@ -101,7 +99,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+      <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-4 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
@@ -110,19 +108,19 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
               >
                 {incident.severity}
               </span>
-              <span className="text-xs font-mono text-slate-400">
-                STATUS: <span className="uppercase text-slate-200">{incident.status}</span>
+              <span className="text-xs font-mono text-[var(--foreground-muted)]">
+                STATUS: <span className="uppercase text-[var(--foreground)]">{incident.status}</span>
               </span>
-              <span className="text-xs font-mono text-slate-400">
-                ALERTS: <span className="text-slate-200">{incident.alert_count}</span>
+              <span className="text-xs font-mono text-[var(--foreground-muted)]">
+                ALERTS: <span className="text-[var(--foreground)]">{incident.alert_count}</span>
               </span>
             </div>
-            <h1 className="text-xl font-bold text-slate-100">{incident.title}</h1>
+            <h1 className="text-xl font-bold text-[var(--foreground)]">{incident.title}</h1>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-[11px] font-mono text-slate-400 uppercase">Calculated Risk</div>
+              <div className="text-[11px] font-mono text-[var(--foreground-muted)] uppercase">Calculated Risk</div>
               <div
                 className={`text-2xl font-bold font-mono ${
                   incident.risk_score > 75
@@ -133,23 +131,23 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
                 }`}
               >
                 {incident.risk_score}
-                <span className="text-xs text-slate-500">/100</span>
+                <span className="text-xs text-[var(--foreground-muted)]">/100</span>
               </div>
             </div>
           </div>
         </div>
 
-        <p className="text-xs text-slate-400 leading-relaxed">{incident.description}</p>
+        <p className="text-xs text-[var(--foreground-muted)] leading-relaxed">{incident.description}</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-[var(--border)] pb-2">
         <button
           onClick={() => setActiveTab("ai")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "ai"
-              ? "bg-slate-800 text-emerald-400"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-[var(--background-muted)] text-emerald-500 dark:text-emerald-400"
+              : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
           }`}
         >
           <Bot className="h-4 w-4" />
@@ -160,8 +158,8 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           onClick={() => setActiveTab("timeline")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "timeline"
-              ? "bg-slate-800 text-emerald-400"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-[var(--background-muted)] text-emerald-500 dark:text-emerald-400"
+              : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
           }`}
         >
           <Clock className="h-4 w-4" />
@@ -172,8 +170,8 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           onClick={() => setActiveTab("remediation")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
             activeTab === "remediation"
-              ? "bg-slate-800 text-emerald-400"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-[var(--background-muted)] text-emerald-500 dark:text-emerald-400"
+              : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
           }`}
         >
           <ListChecks className="h-4 w-4" />
@@ -185,13 +183,13 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
       {activeTab === "ai" && (
         <div className="space-y-6">
           {!investigation ? (
-            <div className="p-12 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/20 space-y-4">
-              <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
+            <div className="p-12 text-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--background-card)] space-y-4">
+              <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mx-auto">
                 <Bot className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-200">No AI Investigation Generated Yet</h3>
-                <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                <h3 className="text-sm font-bold text-[var(--foreground)]">No AI Investigation Generated Yet</h3>
+                <p className="text-xs text-[var(--foreground-muted)] mt-1 max-w-md mx-auto">
                   Trigger Gemini LLM to correlate evidence citations, model confidence, and generate
                   actionable remediation proposals.
                 </p>
@@ -209,25 +207,25 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 {/* Assessment Box */}
-                <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase font-semibold">
+                <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-3">
+                  <div className="flex items-center gap-2 text-emerald-500 dark:text-emerald-400 text-xs font-mono uppercase font-semibold">
                     <FileSearch className="h-4 w-4" />
                     Objective Assessment
                   </div>
-                  <p className="text-sm text-slate-200 leading-relaxed font-sans">
+                  <p className="text-sm text-[var(--foreground)] leading-relaxed font-sans">
                     {investigation.summary}
                   </p>
                 </div>
 
                 {/* Evidence Citations */}
-                <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
-                  <h3 className="text-xs font-mono uppercase font-semibold text-slate-400">
+                <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-3">
+                  <h3 className="text-xs font-mono uppercase font-semibold text-[var(--foreground-muted)]">
                     Observed Telemetry Evidence
                   </h3>
                   <ul className="space-y-2">
                     {investigation.evidence?.evidence_summary?.map((ev, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-slate-300 font-mono">
-                        <span className="text-emerald-400 font-bold">•</span>
+                      <li key={i} className="flex items-start gap-2 text-xs text-[var(--foreground)] font-mono">
+                        <span className="text-emerald-500 dark:text-emerald-400 font-bold">•</span>
                         <span>{ev}</span>
                       </li>
                     ))}
@@ -236,27 +234,27 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
                 {/* Uncertainty Box */}
                 {investigation.uncertainty && (
-                  <div className="p-5 rounded-xl bg-slate-950 border border-amber-900/40 space-y-2">
-                    <div className="text-amber-400 text-xs font-mono uppercase font-semibold flex items-center gap-2">
+                  <div className="p-5 rounded-xl bg-[var(--background-muted)] border border-amber-500/30 space-y-2">
+                    <div className="text-amber-500 text-xs font-mono uppercase font-semibold flex items-center gap-2">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       Evidence Boundary & Uncertainty
                     </div>
-                    <p className="text-xs text-slate-400 font-mono">{investigation.uncertainty}</p>
+                    <p className="text-xs text-[var(--foreground-muted)] font-mono">{investigation.uncertainty}</p>
                   </div>
                 )}
               </div>
 
               {/* Sidebar: Risk factors */}
               <div className="space-y-6">
-                <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-4">
-                  <h3 className="text-xs font-mono uppercase font-semibold text-slate-400">
+                <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-4">
+                  <h3 className="text-xs font-mono uppercase font-semibold text-[var(--foreground-muted)]">
                     Contributing Risk Factors
                   </h3>
                   <div className="space-y-2">
                     {investigation.evidence?.risk_factors?.map((rf, i) => (
                       <div
                         key={i}
-                        className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 font-mono"
+                        className="p-3 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs text-[var(--foreground)] font-mono"
                       >
                         {rf}
                       </div>
@@ -271,7 +269,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
       {/* Tab 2: Timeline */}
       {activeTab === "timeline" && (
-        <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800">
+        <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)]">
           <IncidentTimeline events={timelineEvents} />
         </div>
       )}
@@ -280,33 +278,33 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
       {activeTab === "remediation" && (
         <div className="space-y-4">
           {recommendations.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 font-mono text-xs border border-dashed border-slate-800 rounded-xl">
+            <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-xl">
               No recommendations generated yet. Generate an AI investigation first.
             </div>
           ) : (
             recommendations.map((rec) => (
               <div
                 key={rec.id}
-                className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="p-5 rounded-xl bg-[var(--background-card)] border border-[var(--border)] flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase font-semibold bg-slate-800 text-slate-300">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase font-semibold bg-[var(--background-muted)] text-[var(--foreground)]">
                       {rec.priority} Priority
                     </span>
                     <span
-                      className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
+                      className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
                         rec.status === "approved"
-                          ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
+                          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                           : rec.status === "rejected"
-                          ? "bg-red-950 text-red-400 border border-red-800"
-                          : "bg-amber-950 text-amber-400 border border-amber-800"
+                          ? "bg-red-500/10 text-red-500 border-red-500/20"
+                          : "bg-amber-500/10 text-amber-500 border-amber-500/20"
                       }`}
                     >
                       {rec.status}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-slate-200 mt-1">{rec.action}</p>
+                  <p className="text-sm font-medium text-[var(--foreground)] mt-1">{rec.action}</p>
                 </div>
 
                 {rec.status === "pending" && (
@@ -319,7 +317,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
                     </button>
                     <button
                       onClick={() => handleRecommendationAction(rec.id, false)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-red-950 hover:text-red-300 text-slate-300 text-xs flex items-center gap-1.5 transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-[var(--background-muted)] hover:bg-red-500/10 hover:text-red-400 text-[var(--foreground-muted)] text-xs flex items-center gap-1.5 transition-colors"
                     >
                       <XCircle className="h-3.5 w-3.5" /> Reject
                     </button>
@@ -333,4 +331,3 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     </div>
   );
 }
-

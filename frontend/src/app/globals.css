@@ -1,12 +1,92 @@
 @import "tailwindcss";
 
-:root {
+/* ─── DARK MODE (default / SOC theme) ─── */
+:root,
+.dark {
   --background: #020617;
+  --background-card: #0f172a;
+  --background-muted: #1e293b;
   --foreground: #f8fafc;
+  --foreground-muted: #94a3b8;
+  --border: #1e293b;
+  --accent: #22d3ee;
+  --accent-glow: rgba(34, 211, 238, 0.15);
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+  --sidebar-bg: #0a0f1e;
+}
+
+/* ─── LIGHT MODE ─── */
+.light {
+  --background: #f8fafc;
+  --background-card: #ffffff;
+  --background-muted: #f1f5f9;
+  --foreground: #0f172a;
+  --foreground-muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #0891b2;
+  --accent-glow: rgba(8, 145, 178, 0.1);
+  --danger: #dc2626;
+  --warning: #d97706;
+  --success: #059669;
+  --sidebar-bg: #0f172a;
+}
+
+/* ─── BASE ─── */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.1s ease;
 }
 
 body {
-  background: #020617;
-  color: #f8fafc;
+  background: var(--background);
+  color: var(--foreground);
   min-height: 100vh;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background-muted);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-muted);
+}
+
+/* ─── SELECTION ─── */
+::selection {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+/* ─── UTILITY OVERRIDES ─── */
+.card-bg {
+  background: var(--background-card);
+  border: 1px solid var(--border);
+}
+
+.muted-bg {
+  background: var(--background-muted);
+}
+
+.accent-text {
+  color: var(--accent);
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { box-shadow: 0 0 12px 4px var(--accent-glow); }
+}
+
+.animate-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }

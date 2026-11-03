@@ -25,7 +25,13 @@ class AlertFilter(BaseModel):
     severity: str | None = None
     alert_type: str | None = None
     min_confidence: float | None = None
+    min_risk_score: float | None = None
+    max_risk_score: float | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
     page: int = 1
     page_size: int = 50
+
+    @property
+    def per_page(self) -> int:
+        return self.page_size

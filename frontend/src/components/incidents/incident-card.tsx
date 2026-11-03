@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { formatDateTime, getSeverityColor } from "@/lib/utils";
 import { Incident } from "@/types";
-import { AlertCircle, ArrowUpRight, Clock, Shield } from "lucide-react";
+import { ArrowUpRight, Clock } from "lucide-react";
 
 export function IncidentCard({ incident }: { incident: Incident }) {
   const sev = getSeverityColor(incident.severity);
 
   return (
-    <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all flex flex-col justify-between group">
+    <div className="p-5 rounded-xl bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] transition-all flex flex-col justify-between group shadow-sm">
       <div>
         <div className="flex items-center justify-between gap-3 mb-2">
           <span
@@ -17,7 +17,7 @@ export function IncidentCard({ incident }: { incident: Incident }) {
           >
             {incident.severity}
           </span>
-          <span className="text-xs font-mono text-slate-400">
+          <span className="text-xs font-mono text-[var(--foreground-muted)]">
             RISK:{" "}
             <span
               className={`font-bold ${
@@ -33,22 +33,22 @@ export function IncidentCard({ incident }: { incident: Incident }) {
           </span>
         </div>
 
-        <h3 className="font-semibold text-slate-100 text-sm group-hover:text-emerald-400 transition-colors line-clamp-1">
+        <h3 className="font-semibold text-[var(--foreground)] text-sm group-hover:text-emerald-400 transition-colors line-clamp-1">
           {incident.title}
         </h3>
-        <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+        <p className="text-xs text-[var(--foreground-muted)] mt-1 line-clamp-2 leading-relaxed">
           {incident.description || "Aggregated suspicious telemetry."}
         </p>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+      <div className="mt-4 pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--foreground-muted)]">
         <div className="flex items-center gap-1.5 font-mono text-[11px]">
-          <Clock className="h-3 w-3 text-slate-500" />
+          <Clock className="h-3 w-3 text-[var(--foreground-muted)]" />
           {formatDateTime(incident.created_at)}
         </div>
         <Link
           href={`/dashboard/incidents/${incident.id}`}
-          className="flex items-center gap-1 text-slate-300 hover:text-emerald-400 font-medium"
+          className="flex items-center gap-1 text-[var(--foreground)] hover:text-emerald-400 font-medium"
         >
           Investigate <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
@@ -56,4 +56,3 @@ export function IncidentCard({ incident }: { incident: Incident }) {
     </div>
   );
 }
-

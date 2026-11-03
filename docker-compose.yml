@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # PostgreSQL Database
   db:
@@ -36,6 +34,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./ai:/app/ai
       - ./ml/models:/app/ml_models
     depends_on:
       db:

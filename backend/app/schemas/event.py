@@ -46,3 +46,7 @@ class SecurityEventFilter(BaseModel):
     end_time: datetime | None = None
     page: int = 1
     page_size: int = 50
+
+    @property
+    def per_page(self) -> int:
+        return self.page_size
