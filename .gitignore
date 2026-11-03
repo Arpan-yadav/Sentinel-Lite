@@ -1,0 +1,75 @@
+# ============================
+# SentinelLite .gitignore
+# ============================
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ML artifacts (large files)
+ml/models/*.joblib
+ml/models/*.pkl
+ml/models/*.pickle
+ml/data/*.csv
+ml/data/*.zip
+ml/data/*.gz
+*.h5
+*.hdf5
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Node.js
+node_modules/
+.next/
+out/
+.vercel
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+docker/data/
+
+# PostgreSQL data
+postgres_data/
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/
+coverage/
+
+# Temp
+tmp/
+temp/
+
