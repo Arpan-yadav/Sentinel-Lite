@@ -1,6 +1,7 @@
 "use client";
 
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
+import { useTheme } from "next-themes";
 
 interface SeverityChartProps {
   data: { name: string; value: number }[];
@@ -14,11 +15,13 @@ const COLORS: Record<string, string> = {
 };
 
 export function SeverityChart({ data }: SeverityChartProps) {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const chartData = data.filter((d) => d.value > 0);
 
   if (chartData.length === 0) {
     return (
-      <div className="h-48 flex items-center justify-center text-xs text-slate-500 font-mono">
+      <div className="h-48 flex items-center justify-center text-xs text-[var(--foreground-muted)] font-mono">
         No incident severity data available
       </div>
     );
@@ -46,10 +49,11 @@ export function SeverityChart({ data }: SeverityChartProps) {
           </Pie>
           <Tooltip
             contentStyle={{
-              backgroundColor: "#0f172a",
-              borderColor: "#1e293b",
+              backgroundColor: isLight ? "#ffffff" : "#0b1120",
+              borderColor: isLight ? "#e2e8f0" : "#1e293b",
               borderRadius: "8px",
-              color: "#f8fafc",
+              color: isLight ? "#0f172a" : "#f8fafc",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
             }}
           />
         </PieChart>
@@ -57,4 +61,3 @@ export function SeverityChart({ data }: SeverityChartProps) {
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { DashboardStats, Incident } from "@/types";
 import { IncidentCard } from "@/components/incidents/incident-card";
@@ -9,9 +10,12 @@ import {
   Activity,
   AlertOctagon,
   AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
   Play,
   RefreshCw,
   ShieldAlert,
+  Zap,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -20,9 +24,10 @@ export default function DashboardPage() {
   const [severityData, setSeverityData] = useState<{ name: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [detecting, setDetecting] = useState(false);
-  const [detectionMsg, setDetectionMsg] = useState("");
+  const [detectionMsg, setDetectionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [statsRes, incidentsRes, sevRes] = await Promise.allSettled([
@@ -38,28 +43,38 @@ export default function DashboardPage() {
           sevRes.value.data.map((item) => ({ name: item.severity, value: item.count }))
         );
       }
+      setLastRefreshed(new Date());
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   const handleRunDetection = async () => {
     try {
       setDetecting(true);
-      setDetectionMsg("");
+      setDetectionMsg(null);
       const res = await api.post("/detection/run?limit=1000&auto_correlate=true");
-      setDetectionMsg(
-        `✓ Detection finished: ${res.data.detection_summary?.alerts_created || 0} alerts, ${res.data.incidents_created || 0} incidents generated.`
-      );
+      const analyzed = res.data.detection_summary?.events_analyzed ?? 0;
+      const alerts = res.data.detection_summary?.alerts_created ?? 0;
+      const incs = res.data.incidents_created ?? 0;
+      setDetectionMsg({
+        type: "success",
+        text: `Detection Pipeline Complete: Processed ${analyzed} telemetry events, identified ${alerts} anomalous alerts, and correlated ${incs} new security incidents.`,
+      });
       await fetchData();
-    } catch {
-      setDetectionMsg("⚠ Failed to run detection pipeline. Ensure backend is running.");
+    } catch (err) {
+      setDetectionMsg({
+        type: "error",
+        text: "Pipeline execution encountered an issue. Verify backend connectivity and model availability.",
+      });
     } finally {
       setDetecting(false);
     }
@@ -69,51 +84,62 @@ export default function DashboardPage() {
     {
       label: "Ingested Events",
       value: stats?.total_events?.toLocaleString() ?? "0",
+      subtext: "Raw security packet logs",
       icon: Activity,
-      color: "text-blue-400",
+      color: "text-blue-500 dark:text-blue-400",
       bg: "bg-blue-500/10 border-blue-500/20",
     },
     {
       label: "Active Alerts",
       value: stats?.total_alerts?.toLocaleString() ?? "0",
+      subtext: "ML flagged anomalies",
       icon: AlertTriangle,
-      color: "text-amber-400",
+      color: "text-amber-500 dark:text-amber-400",
       bg: "bg-amber-500/10 border-amber-500/20",
     },
     {
       label: "Open Incidents",
       value: String(stats?.open_incidents ?? "0"),
+      subtext: "Prioritized attack clusters",
       icon: ShieldAlert,
-      color: "text-orange-400",
+      color: "text-orange-500 dark:text-orange-400",
       bg: "bg-orange-500/10 border-orange-500/20",
     },
     {
       label: "Critical Detections",
       value: String(stats?.critical_alerts ?? "0"),
+      subtext: "Peak risk factor > 75",
       icon: AlertOctagon,
-      color: "text-red-400",
+      color: "text-red-500 dark:text-red-400",
       bg: "bg-red-500/10 border-red-500/20",
     },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Top Action Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            SOC Operations Center
-          </h1>
-          <p className="text-sm text-[var(--foreground-muted)] mt-1 font-mono">
-            Real-time ML telemetry · threat detection · AI investigation
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+              SOC Operations Center
+            </h1>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              LIVE TELEMETRY
+            </span>
+          </div>
+          <p className="text-xs text-[var(--foreground-muted)] mt-1 font-mono">
+            Autonomous threat detection · XGBoost + Isolation Forest · Gemini AI response
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={fetchData}
-            className="p-2.5 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground-muted)] transition-colors"
-            title="Refresh telemetry"
+            disabled={loading}
+            className="p-2.5 rounded-lg bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground-muted)] transition-colors cursor-pointer"
+            title={`Refresh telemetry (Last: ${lastRefreshed.toLocaleTimeString()})`}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -121,87 +147,143 @@ export default function DashboardPage() {
           <button
             onClick={handleRunDetection}
             disabled={detecting}
-            className="px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-2 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
           >
             <Play className="h-3.5 w-3.5 fill-current" />
-            {detecting ? "Running ML Models..." : "Run ML Detection"}
+            {detecting ? "Running ML Pipeline..." : "Run ML Detection"}
           </button>
         </div>
       </div>
 
+      {/* Detection Feedback Notification */}
       {detectionMsg && (
-        <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-xs font-mono">
-          {detectionMsg}
+        <div
+          className={`p-4 rounded-xl text-xs font-mono flex items-center justify-between transition-all ${
+            detectionMsg.type === "success"
+              ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+              : "bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {detectionMsg.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+            )}
+            <span>{detectionMsg.text}</span>
+          </div>
+          <button
+            onClick={() => setDetectionMsg(null)}
+            className="text-[10px] uppercase font-bold hover:underline cursor-pointer"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* KPI Cards */}
+      {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map(({ label, value, icon: Icon, color, bg }) => (
+        {kpis.map(({ label, value, subtext, icon: Icon, color, bg }) => (
           <div
             key={label}
-            className="p-5 rounded-xl bg-[var(--background-card)] border border-[var(--border)] flex items-center justify-between hover:border-[var(--foreground-muted)] transition-colors"
+            className="p-5 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] flex flex-col justify-between hover:border-[var(--border-strong)] transition-all shadow-xs"
           >
-            <div>
-              <div className="text-xs font-mono text-[var(--foreground-muted)] uppercase">{label}</div>
-              <div className={`text-2xl font-bold mt-1 ${color}`}>{value}</div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-[var(--foreground-muted)] uppercase tracking-wider">
+                {label}
+              </span>
+              <div className={`h-9 w-9 rounded-lg border flex items-center justify-center ${bg} ${color}`}>
+                <Icon className="h-4.5 w-4.5" />
+              </div>
             </div>
-            <div className={`h-10 w-10 rounded-lg border flex items-center justify-center ${bg} ${color}`}>
-              <Icon className="h-5 w-5" />
+            <div className="mt-4">
+              <div className={`text-2xl font-bold font-mono tracking-tight ${color}`}>{value}</div>
+              <div className="text-[11px] text-[var(--foreground-muted)] mt-1 font-mono">{subtext}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Main Grid */}
+      {/* Main Grid: Severity Chart & Recent Incidents */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Severity Chart */}
-        <div className="p-6 rounded-xl bg-[var(--background-card)] border border-[var(--border)]">
-          <h2 className="text-sm font-bold text-[var(--foreground)] tracking-wide mb-1 uppercase font-mono">
-            Incident Severity
-          </h2>
-          <p className="text-xs text-[var(--foreground-muted)] mb-4">Proportion by risk rating</p>
-          <SeverityChart data={severityData} />
+        {/* Severity Chart Column */}
+        <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xs font-bold text-[var(--foreground)] tracking-wide uppercase font-mono">
+                Incident Severity Breakdown
+              </h2>
+              <span className="text-[10px] font-mono text-[var(--foreground-muted)]">Live Ratio</span>
+            </div>
+            <p className="text-xs text-[var(--foreground-muted)] mb-4">
+              Multi-factor risk distribution of all active attacks
+            </p>
+            <SeverityChart data={severityData} />
+          </div>
 
           <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-2 gap-2 text-xs font-mono">
             {[
-              { color: "bg-red-500", label: "Critical" },
-              { color: "bg-orange-500", label: "High" },
-              { color: "bg-amber-500", label: "Medium" },
-              { color: "bg-emerald-500", label: "Low" },
-            ].map(({ color, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full ${color}`} />
-                <span className="text-[var(--foreground-muted)]">{label}</span>
+              { color: "bg-red-500", label: "Critical", score: "Risk > 75" },
+              { color: "bg-orange-500", label: "High", score: "Risk 60-75" },
+              { color: "bg-amber-500", label: "Medium", score: "Risk 35-60" },
+              { color: "bg-emerald-500", label: "Low", score: "Risk < 35" },
+            ].map(({ color, label, score }) => (
+              <div key={label} className="flex items-center justify-between p-2 rounded-lg bg-[var(--background-muted)]/50">
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${color}`} />
+                  <span className="text-[var(--foreground)] font-medium text-[11px]">{label}</span>
+                </div>
+                <span className="text-[10px] text-[var(--foreground-muted)]">{score}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent Incidents */}
-        <div className="lg:col-span-2 p-6 rounded-xl bg-[var(--background-card)] border border-[var(--border)]">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-bold text-[var(--foreground)] tracking-wide uppercase font-mono">
-                Recent Security Incidents
-              </h2>
-              <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
-                Correlated from active network telemetry
-              </p>
+        {/* Recent Incidents Column */}
+        <div className="lg:col-span-2 p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xs font-bold text-[var(--foreground)] tracking-wide uppercase font-mono">
+                  Recent Correlated Incidents
+                </h2>
+                <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
+                  Automated clusters aggregated from raw event telemetry
+                </p>
+              </div>
+
+              <Link
+                href="/dashboard/incidents"
+                className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-mono font-semibold"
+              >
+                View All Incidents <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
+
+            {loading && incidents.length === 0 ? (
+              <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-xl">
+                Loading live incident telemetry...
+              </div>
+            ) : incidents.length === 0 ? (
+              <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-xl">
+                No incidents yet. Ingest telemetry logs in Events or click &ldquo;Run ML Detection&rdquo;.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {incidents.map((inc) => (
+                  <IncidentCard key={inc.id} incident={inc} />
+                ))}
+              </div>
+            )}
           </div>
 
-          {incidents.length === 0 ? (
-            <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-lg">
-              No incidents yet. Click &ldquo;Run ML Detection&rdquo; or upload demo logs in Events.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {incidents.map((inc) => (
-                <IncidentCard key={inc.id} incident={inc} />
-              ))}
-            </div>
-          )}
+          <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-mono text-[var(--foreground-muted)]">
+            <span className="flex items-center gap-1.5">
+              <Zap className="h-3.5 w-3.5 text-emerald-500" />
+              Real-time heuristic clustering active
+            </span>
+            <span>Refreshed: {lastRefreshed.toLocaleTimeString()}</span>
+          </div>
         </div>
       </div>
     </div>

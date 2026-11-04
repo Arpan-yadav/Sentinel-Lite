@@ -19,13 +19,22 @@ class Settings(BaseSettings):
     # AI
     GEMINI_API_KEY: str = ""
 
-    # CORS – comma-separated origins
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+    # CORS – comma-separated or JSON list
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000"
 
     @property
     def cors_origins_list(self) -> list[str]:
         """Return CORS origins as a list."""
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+        import json
+        val = self.CORS_ORIGINS.strip()
+        if val.startswith("[") and val.endswith("]"):
+            try:
+                parsed = json.loads(val)
+                if isinstance(parsed, list):
+                    return [str(o).strip() for o in parsed]
+            except Exception:
+                pass
+        return [origin.strip().strip("'\"[]") for origin in val.split(",") if origin.strip().strip("'\"[]")]
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": True}
 

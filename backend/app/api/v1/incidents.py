@@ -38,6 +38,7 @@ async def list_incidents(
     filters = IncidentFilter(
         status=status,
         severity=severity,
+        search=search,
         page=page,
         page_size=page_size,
     )

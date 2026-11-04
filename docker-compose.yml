@@ -29,7 +29,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://sentinellite:sentinellite_dev_2024@db:5432/sentinellite
       SECRET_KEY: sentinellite-dev-secret-key-change-in-production
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      CORS_ORIGINS: '["http://localhost:3000", "http://localhost:8000"]'
+      CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000"
+      ACCESS_TOKEN_EXPIRE_MINUTES: "480"
     ports:
       - "8000:8000"
     volumes:

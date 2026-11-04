@@ -1,36 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { SecurityEvent } from "@/types";
 import { formatDateTime } from "@/lib/utils";
-import { Upload, Search, Filter } from "lucide-react";
+import {
+  Upload,
+  Search,
+  Filter,
+  Download,
+  Activity,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  FileCode,
+} from "lucide-react";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [uploadMsg, setUploadMsg] = useState("");
+  const [uploadMsg, setUploadMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [searchIp, setSearchIp] = useState("");
+  const [protocolFilter, setProtocolFilter] = useState("");
+  const [page, setPage] = useState(1);
 
-  const fetchEvents = async () => {
+  const pageSize = 50;
+
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
-      const url = searchIp
-        ? `/events/?source_ip=${encodeURIComponent(searchIp)}&page_size=50`
-        : "/events/?page_size=50";
-      const res = await api.get<SecurityEvent[]>(url);
+      const params = new URLSearchParams();
+      if (searchIp.trim()) params.append("source_ip", searchIp.trim());
+      if (protocolFilter) params.append("protocol", protocolFilter);
+      params.append("page", String(page));
+      params.append("page_size", String(pageSize));
+
+      const res = await api.get<SecurityEvent[]>(`/events/?${params.toString()}`);
       setEvents(res.data);
     } catch (err) {
       console.error("Failed to fetch events:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchIp, protocolFilter, page]);
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [fetchEvents]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,18 +58,49 @@ export default function EventsPage() {
 
     try {
       setUploading(true);
-      setUploadMsg("");
+      setUploadMsg(null);
       const res = await api.post("/events/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setUploadMsg(`Success: Ingested ${res.data.events_ingested} events from ${file.name}!`);
+      setUploadMsg({
+        type: "success",
+        text: `Log Ingestion Complete: Successfully parsed & stored ${res.data.events_ingested} event records from ${file.name}!`,
+      });
       await fetchEvents();
     } catch {
-      setUploadMsg("Upload failed. Verify CSV format.");
+      setUploadMsg({
+        type: "error",
+        text: "Upload failed. Verify CSV format matches required telemetry headers (timestamp, source_ip, dest_ip, event_type).",
+      });
     } finally {
       setUploading(false);
       e.target.value = "";
     }
+  };
+
+  const handleExportCSV = () => {
+    if (events.length === 0) return;
+    const headers = ["ID", "Timestamp", "Source IP", "Dest IP", "Source Port", "Dest Port", "Protocol", "Event Type"];
+    const rows = events.map((ev) => [
+      ev.id,
+      ev.timestamp,
+      ev.source_ip,
+      ev.dest_ip,
+      ev.source_port,
+      ev.dest_port,
+      ev.protocol,
+      ev.event_type,
+    ]);
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `sentinellite_events_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -60,18 +108,33 @@ export default function EventsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            Security Event Telemetry
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+              Security Event Telemetry
+            </h1>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold">
+              {events.length} Events on Page
+            </span>
+          </div>
           <p className="text-sm text-[var(--foreground-muted)] font-mono mt-1">
-            Raw ingested packet flows, authentication records, and network telemetry
+            Raw ingested packet flows, network session traces & endpoint authentication logs
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <label className="cursor-pointer px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-2 transition-colors">
+          <button
+            onClick={handleExportCSV}
+            disabled={events.length === 0}
+            className="px-3.5 py-2 rounded-lg bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground)] text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            title="Download CSV report"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export CSV
+          </button>
+
+          <label className="cursor-pointer px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-sm">
             <Upload className="h-4 w-4" />
-            {uploading ? "Ingesting..." : "Upload Security Logs"}
+            {uploading ? "Ingesting..." : "Ingest Telemetry Logs"}
             <input
               type="file"
               accept=".csv,.log,.txt"
@@ -84,71 +147,120 @@ export default function EventsPage() {
       </div>
 
       {uploadMsg && (
-        <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-xs font-mono">
-          {uploadMsg}
+        <div
+          className={`p-4 rounded-xl text-xs font-mono flex items-center justify-between transition-all ${
+            uploadMsg.type === "success"
+              ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+              : "bg-red-500/10 border border-red-500/30 text-red-500 dark:text-red-400"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>{uploadMsg.text}</span>
+          </div>
+          <button
+            onClick={() => setUploadMsg(null)}
+            className="text-[10px] uppercase font-bold hover:underline cursor-pointer"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* Filter / Search Bar */}
-      <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--background-card)] border border-[var(--border)] shadow-sm">
-        <div className="relative flex-1">
+      {/* Filter and Search Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-xs">
+        <div className="md:col-span-2 relative">
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-[var(--foreground-muted)]" />
           <input
             type="text"
-            placeholder="Filter by Source IP (e.g. 192.168.1.10 or 185.220...)"
+            placeholder="Filter by Source IP (e.g. 45.138.16.7 or 10.0.0.25)..."
             value={searchIp}
-            onChange={(e) => setSearchIp(e.target.value)}
+            onChange={(e) => {
+              setSearchIp(e.target.value);
+              setPage(1);
+            }}
             onKeyDown={(e) => e.key === "Enter" && fetchEvents()}
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs text-[var(--foreground)] font-mono"
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs text-[var(--foreground)] font-mono transition-colors"
           />
         </div>
 
-        <button
-          onClick={fetchEvents}
-          className="px-4 py-2 rounded-lg bg-[var(--background-muted)] hover:border-[var(--foreground-muted)] border border-[var(--border)] text-[var(--foreground)] text-xs font-mono flex items-center gap-2 transition-colors"
-        >
-          <Filter className="h-3.5 w-3.5" />
-          Search
-        </button>
+        <div>
+          <select
+            value={protocolFilter}
+            onChange={(e) => {
+              setProtocolFilter(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-3 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs text-[var(--foreground)] font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            <option value="">All Protocols</option>
+            <option value="TCP">TCP</option>
+            <option value="UDP">UDP</option>
+            <option value="ICMP">ICMP</option>
+          </select>
+        </div>
+
+        <div>
+          <button
+            onClick={fetchEvents}
+            className="w-full px-4 py-2 rounded-lg bg-[var(--background-muted)] hover:border-[var(--foreground-muted)] border border-[var(--border)] text-[var(--foreground)] text-xs font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <Filter className="h-3.5 w-3.5" />
+            Apply Filter
+          </button>
+        </div>
       </div>
 
       {/* Events Table */}
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--background-card)] overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--background-card)] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
             <thead className="bg-[var(--background-muted)] border-b border-[var(--border)] text-[var(--foreground-muted)] uppercase">
               <tr>
-                <th className="px-5 py-3 font-semibold">Timestamp</th>
-                <th className="px-5 py-3 font-semibold">Source Vector</th>
-                <th className="px-5 py-3 font-semibold">Destination</th>
-                <th className="px-5 py-3 font-semibold">Proto/Port</th>
-                <th className="px-5 py-3 font-semibold">Event Type</th>
+                <th className="px-5 py-3.5 font-semibold">Event Timestamp</th>
+                <th className="px-5 py-3.5 font-semibold">Source Vector</th>
+                <th className="px-5 py-3.5 font-semibold">Target Destination</th>
+                <th className="px-5 py-3.5 font-semibold">Proto / Port</th>
+                <th className="px-5 py-3.5 font-semibold">Event Classification</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)] text-[var(--foreground)]">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-[var(--foreground-muted)]">
-                    Loading event telemetry...
+                  <td colSpan={5} className="p-10 text-center text-[var(--foreground-muted)]">
+                    Loading raw security event stream...
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-[var(--foreground-muted)]">
-                    No security events found. Ingest logs using the Upload button above.
+                  <td colSpan={5} className="p-12 text-center text-[var(--foreground-muted)]">
+                    <Activity className="h-8 w-8 mx-auto mb-2 text-[var(--foreground-muted)] opacity-50" />
+                    No security events found. Ingest logs using the upload button above.
                   </td>
                 </tr>
               ) : (
                 events.map((ev) => (
                   <tr key={ev.id} className="hover:bg-[var(--background-muted)]/50 transition-colors">
-                    <td className="px-5 py-3 text-[var(--foreground-muted)]">{formatDateTime(ev.timestamp)}</td>
-                    <td className="px-5 py-3 font-semibold text-[var(--foreground)]">{ev.source_ip}</td>
-                    <td className="px-5 py-3">{ev.dest_ip}</td>
-                    <td className="px-5 py-3 text-[var(--foreground-muted)]">
-                      {ev.protocol} / {ev.dest_port}
+                    <td className="px-5 py-3 text-[var(--foreground-muted)] whitespace-nowrap">
+                      {formatDateTime(ev.timestamp)}
                     </td>
-                    <td className="px-5 py-3">
-                      <span className="px-2 py-0.5 rounded bg-[var(--background-muted)] text-emerald-500 dark:text-emerald-400 text-[11px]">
+                    <td className="px-5 py-3 font-semibold text-[var(--foreground)] whitespace-nowrap">
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{ev.source_ip}</span>
+                      {ev.source_port && (
+                        <span className="text-[var(--foreground-muted)] font-normal text-[11px]">:{ev.source_port}</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <span className="font-mono">{ev.dest_ip}</span>
+                    </td>
+                    <td className="px-5 py-3 text-[var(--foreground-muted)] whitespace-nowrap">
+                      <span className="px-1.5 py-0.5 rounded bg-[var(--background-muted)] text-[11px] font-semibold">
+                        {ev.protocol || "TCP"}
+                      </span>{" "}
+                      / <span className="font-mono">{ev.dest_port}</span>
+                    </td>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
                         {ev.event_type}
                       </span>
                     </td>
@@ -157,6 +269,29 @@ export default function EventsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="px-5 py-3 border-t border-[var(--border)] bg-[var(--background-muted)]/30 flex items-center justify-between text-xs font-mono text-[var(--foreground-muted)]">
+          <div>
+            Page <span className="font-semibold text-[var(--foreground)]">{page}</span> ({events.length} events displayed)
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--background-card)] hover:text-[var(--foreground)] disabled:opacity-40 cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={events.length < pageSize}
+              className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--background-card)] hover:text-[var(--foreground)] disabled:opacity-40 cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
