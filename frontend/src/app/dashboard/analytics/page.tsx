@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { TrendChart } from "@/components/charts/trend-chart";
 import { SeverityChart } from "@/components/charts/severity-chart";
 import { AttackTrend, SeverityDistribution, DashboardStats } from "@/types";
-import { BarChart3, ShieldAlert, Cpu, Zap, Activity, RefreshCw } from "lucide-react";
+import { BarChart3, ShieldAlert, Cpu, RefreshCw } from "lucide-react";
 
 export default function AnalyticsPage() {
   const [trends, setTrends] = useState<AttackTrend[]>([]);
@@ -13,7 +13,7 @@ export default function AnalyticsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const [trendRes, sevRes, statsRes] = await Promise.allSettled([
@@ -30,11 +30,11 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [fetchAnalytics]);
 
   const chartTrends = trends.map((t) => ({
     attack_type: t.event_type || t.date || "Unknown",

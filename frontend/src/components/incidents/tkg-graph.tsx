@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import {
-  AlertTriangle,
-  ArrowRight,
   CheckCircle2,
   Copy,
-  ExternalLink,
   Lock,
   RefreshCw,
   Shield,
-  ShieldAlert,
   Zap,
 } from "lucide-react";
 
@@ -73,7 +69,7 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
   const [containSuccess, setContainSuccess] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const fetchTkg = async () => {
+  const fetchTkg = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get<TKGData>(`/graph/incident/${incidentId}`);
@@ -83,11 +79,11 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [incidentId]);
 
   useEffect(() => {
     fetchTkg();
-  }, [incidentId]);
+  }, [fetchTkg]);
 
   const handleContainAtChokepoint = async () => {
     try {
@@ -122,8 +118,6 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
   const attackerNodes = tkg.nodes.filter((n) => n.type === "attacker");
   const techniqueNodes = tkg.nodes.filter((n) => n.type === "technique");
   const targetNodes = tkg.nodes.filter((n) => n.type === "target");
-  const predictedNode = tkg.nodes.find((n) => n.type === "predicted");
-  const chokepointNode = tkg.nodes.find((n) => n.type === "chokepoint");
 
   return (
     <div className="space-y-6 font-sans">

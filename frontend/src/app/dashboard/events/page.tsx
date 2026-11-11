@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  FileCode,
 } from "lucide-react";
 
 export default function EventsPage() {

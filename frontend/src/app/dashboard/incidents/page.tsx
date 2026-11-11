@@ -8,7 +8,6 @@ import { formatDateTime, getSeverityColor } from "@/lib/utils";
 import {
   ArrowUpRight,
   Download,
-  Filter,
   RefreshCw,
   Search,
   ShieldAlert,
