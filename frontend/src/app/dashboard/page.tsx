@@ -70,7 +70,7 @@ export default function DashboardPage() {
         text: `Detection Pipeline Complete: Processed ${analyzed} telemetry events, identified ${alerts} anomalous alerts, and correlated ${incs} new security incidents.`,
       });
       await fetchData();
-    } catch (err) {
+    } catch {
       setDetectionMsg({
         type: "error",
         text: "Pipeline execution encountered an issue. Verify backend connectivity and model availability.",

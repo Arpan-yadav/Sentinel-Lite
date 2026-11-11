@@ -20,7 +20,7 @@ export interface SecurityEvent {
   dest_port: number;
   protocol: string;
   event_type: string;
-  raw_data?: Record<string, any>;
+  raw_data?: Record<string, unknown>;
   asset_id?: string;
   created_at: string;
 }

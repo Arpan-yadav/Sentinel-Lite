@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import {
   CheckCircle2,
@@ -11,10 +11,7 @@ import {
   RefreshCw,
   Shield,
   ShieldAlert,
-  Terminal,
-  Trash2,
   Unlock,
-  Zap,
 } from "lucide-react";
 
 interface BlockRule {
@@ -38,7 +35,7 @@ export default function DefensePage() {
   const [activeSdkTab, setActiveSdkTab] = useState<"python" | "node">("python");
   const [copiedSdk, setCopiedSdk] = useState(false);
 
-  const fetchBlocklist = async () => {
+  const fetchBlocklist = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get<{ rules: BlockRule[] }>("/defense/blocklist");
@@ -48,11 +45,11 @@ export default function DefensePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBlocklist();
-  }, []);
+  }, [fetchBlocklist]);
 
   const handleAddBlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,7 +326,11 @@ app.use(sentinelLite({
               className="p-2 rounded-lg bg-[var(--background-muted)] hover:bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] cursor-pointer transition-colors"
               title="Copy snippet"
             >
-              <Copy className="h-4 w-4" />
+              {copiedSdk ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>

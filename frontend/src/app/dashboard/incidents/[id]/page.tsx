@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, useCallback, use } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Incident, IncidentStatus, Investigation, Recommendation } from "@/types";
@@ -18,7 +18,6 @@ import {
   ListChecks,
   Network,
   Play,
-  ShieldAlert,
   XCircle,
 } from "lucide-react";
 
@@ -29,6 +28,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [incident, setIncident] = useState<Incident | null>(null);
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"tkg" | "ai" | "timeline" | "remediation">("tkg");
   const [loading, setLoading] = useState(true);
@@ -36,11 +36,12 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [copied, setCopied] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const fetchIncidentDetails = async () => {
+  const fetchIncidentDetails = useCallback(async () => {
     try {
       setLoading(true);
       const [incRes, timelineRes, recRes] = await Promise.allSettled([
         api.get<Incident>(`/incidents/${incidentId}`),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         api.get<{ timeline: any[] }>(`/incidents/${incidentId}/timeline`),
         api.get<Recommendation[]>(`/recommendations/incident/${incidentId}`),
       ]);
@@ -60,11 +61,11 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     } finally {
       setLoading(false);
     }
-  };
+  }, [incidentId]);
 
   useEffect(() => {
     fetchIncidentDetails();
-  }, [incidentId]);
+  }, [fetchIncidentDetails]);
 
   const handleStatusUpdate = async (newStatus: IncidentStatus) => {
     try {
