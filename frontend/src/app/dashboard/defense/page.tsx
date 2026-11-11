@@ -111,17 +111,17 @@ app.use(sentinelLite({
   return (
     <div className="space-y-8 font-sans">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-(--border)">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            <h1 className="text-2xl font-bold tracking-tight text-(--foreground)">
               Active Defense & Perimeter Blocklist
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-semibold flex items-center gap-1">
               <Shield className="h-3 w-3" /> LIVE CONTAINMENT
             </span>
           </div>
-          <p className="text-sm text-[var(--foreground-muted)] font-mono mt-1">
+          <p className="text-sm text-(--foreground-muted) font-mono mt-1">
             Real-time IP containment boundary, automated chokepoint mitigations & universal website SDK feed
           </p>
         </div>
@@ -129,7 +129,7 @@ app.use(sentinelLite({
         <button
           onClick={fetchBlocklist}
           disabled={loading}
-          className="p-2.5 rounded-lg bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground-muted)] transition-colors cursor-pointer self-start md:self-auto"
+          className="p-2.5 rounded-lg bg-(--background-card) border border-(--border) hover:border-(--foreground-muted) text-(--foreground-muted) transition-colors cursor-pointer self-start md:self-auto"
           title="Refresh blocklist"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -146,18 +146,18 @@ app.use(sentinelLite({
       {/* Grid: Manual Block Form + Live Blocklist */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Manual Rule Creator */}
-        <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-4 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[var(--foreground)] uppercase">
+        <div className="p-6 rounded-2xl bg-(--background-card) border border-(--border) space-y-4 shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-(--foreground) uppercase">
             <Plus className="h-4 w-4 text-emerald-500" />
             Add Active Containment Rule
           </div>
-          <p className="text-xs text-[var(--foreground-muted)]">
+          <p className="text-xs text-(--foreground-muted)">
             Instantly pushes an ingress DROP rule across all connected firewalls, Nginx proxies, and website SDKs.
           </p>
 
           <form onSubmit={handleAddBlock} className="space-y-4 pt-1">
             <div>
-              <label className="block text-[11px] font-mono uppercase text-[var(--foreground-muted)] mb-1">
+              <label className="block text-[11px] font-mono uppercase text-(--foreground-muted) mb-1">
                 Target Attacker IP
               </label>
               <input
@@ -166,12 +166,12 @@ app.use(sentinelLite({
                 placeholder="e.g. 185.220.101.42 or 45.138.16.0"
                 value={newIp}
                 onChange={(e) => setNewIp(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs font-mono text-[var(--foreground)]"
+                className="w-full px-3 py-2 rounded-lg bg-(--background-muted) border border-(--border) focus:border-emerald-500 focus:outline-none text-xs font-mono text-(--foreground)"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono uppercase text-[var(--foreground-muted)] mb-1">
+              <label className="block text-[11px] font-mono uppercase text-(--foreground-muted) mb-1">
                 Justification / Threat Description
               </label>
               <input
@@ -179,18 +179,18 @@ app.use(sentinelLite({
                 placeholder="e.g. Repeated SSH Brute Force attempts"
                 value={newReason}
                 onChange={(e) => setNewReason(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs font-mono text-[var(--foreground)]"
+                className="w-full px-3 py-2 rounded-lg bg-(--background-muted) border border-(--border) focus:border-emerald-500 focus:outline-none text-xs font-mono text-(--foreground)"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono uppercase text-[var(--foreground-muted)] mb-1">
+              <label className="block text-[11px] font-mono uppercase text-(--foreground-muted) mb-1">
                 Severity Level
               </label>
               <select
                 value={newSeverity}
                 onChange={(e) => setNewSeverity(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs font-mono text-[var(--foreground)] cursor-pointer"
+                className="w-full px-3 py-2 rounded-lg bg-(--background-muted) border border-(--border) focus:border-emerald-500 focus:outline-none text-xs font-mono text-(--foreground) cursor-pointer"
               >
                 <option value="critical">Critical (Immediate Drop)</option>
                 <option value="high">High (Perimeter Isolation)</option>
@@ -210,20 +210,20 @@ app.use(sentinelLite({
         </div>
 
         {/* Right Columns: Active Blocklist Table */}
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-4 shadow-xs">
+        <div className="lg:col-span-2 p-6 rounded-2xl bg-(--background-card) border border-(--border) space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[var(--foreground)] uppercase">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-(--foreground) uppercase">
               <ShieldAlert className="h-4 w-4 text-red-500" />
               Active Dynamic Blocklist ({rules.length} Rules Enforced)
             </div>
-            <span className="text-[10px] font-mono text-[var(--foreground-muted)]">
+            <span className="text-[10px] font-mono text-(--foreground-muted)">
               Real-time API sync active
             </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-[var(--background-muted)] border-b border-[var(--border)] text-[var(--foreground-muted)] uppercase text-[10px]">
+              <thead className="bg-(--background-muted) border-b border-(--border) text-(--foreground-muted) uppercase text-[10px]">
                 <tr>
                   <th className="px-4 py-3">Contained IP Vector</th>
                   <th className="px-4 py-3">Threat Reason</th>
@@ -232,26 +232,26 @@ app.use(sentinelLite({
                   <th className="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border)] text-[var(--foreground)]">
+              <tbody className="divide-y divide-(--border) text-(--foreground)">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-[var(--foreground-muted)]">
+                    <td colSpan={5} className="p-8 text-center text-(--foreground-muted)">
                       Loading perimeter blocklist...
                     </td>
                   </tr>
                 ) : rules.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-[var(--foreground-muted)]">
+                    <td colSpan={5} className="p-8 text-center text-(--foreground-muted)">
                       No active blocklist rules enforced. Add a rule above or contain threats from incidents.
                     </td>
                   </tr>
                 ) : (
                   rules.map((rule) => (
-                    <tr key={rule.ip} className="hover:bg-[var(--background-muted)]/50 transition-colors">
+                    <tr key={rule.ip} className="hover:bg-(--background-muted)/50 transition-colors">
                       <td className="px-4 py-3 font-bold text-red-400 whitespace-nowrap">
                         {rule.ip}
                       </td>
-                      <td className="px-4 py-3 max-w-xs truncate text-[var(--foreground-muted)]">
+                      <td className="px-4 py-3 max-w-xs truncate text-(--foreground-muted)">
                         {rule.reason}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -265,7 +265,7 @@ app.use(sentinelLite({
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button
                           onClick={() => handleUnblock(rule.ip)}
-                          className="px-2.5 py-1 rounded bg-[var(--background-muted)] hover:bg-red-500/10 hover:text-red-400 text-[var(--foreground-muted)] text-[11px] inline-flex items-center gap-1 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded bg-(--background-muted) hover:bg-red-500/10 hover:text-red-400 text-(--foreground-muted) text-[11px] inline-flex items-center gap-1 transition-colors cursor-pointer"
                           title="Revoke block rule"
                         >
                           <Unlock className="h-3 w-3" /> Unblock
@@ -281,26 +281,26 @@ app.use(sentinelLite({
       </div>
 
       {/* Universal Website & Server Integration Hub */}
-      <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-4 shadow-xs">
+      <div className="p-6 rounded-2xl bg-(--background-card) border border-(--border) space-y-4 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-xs font-mono uppercase font-bold text-[var(--foreground)] tracking-wider flex items-center gap-2">
+            <h3 className="text-xs font-mono uppercase font-bold text-(--foreground) tracking-wider flex items-center gap-2">
               <Globe className="h-4 w-4 text-emerald-500" />
               Universal Website & Server Sensor SDK
             </h3>
-            <p className="text-xs text-[var(--foreground-muted)]">
+            <p className="text-xs text-(--foreground-muted)">
               Map any website, web service, or API to SentinelLite. Blocks intruders at the perimeter before fraud or unauthorized access.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs font-mono">
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-(--background-muted) border border-(--border) text-xs font-mono">
               <button
                 onClick={() => setActiveSdkTab("python")}
                 className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
                   activeSdkTab === "python"
-                    ? "bg-[var(--background-card)] text-emerald-400 border border-[var(--border)]"
-                    : "text-[var(--foreground-muted)]"
+                    ? "bg-(--background-card) text-emerald-400 border border-(--border)"
+                    : "text-(--foreground-muted)"
                 }`}
               >
                 Python (FastAPI / Flask)
@@ -309,8 +309,8 @@ app.use(sentinelLite({
                 onClick={() => setActiveSdkTab("node")}
                 className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
                   activeSdkTab === "node"
-                    ? "bg-[var(--background-card)] text-emerald-400 border border-[var(--border)]"
-                    : "text-[var(--foreground-muted)]"
+                    ? "bg-(--background-card) text-emerald-400 border border-(--border)"
+                    : "text-(--foreground-muted)"
                 }`}
               >
                 Node.js (Express)
@@ -323,7 +323,7 @@ app.use(sentinelLite({
                 setCopiedSdk(true);
                 setTimeout(() => setCopiedSdk(false), 2000);
               }}
-              className="p-2 rounded-lg bg-[var(--background-muted)] hover:bg-[var(--background-card)] border border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] cursor-pointer transition-colors"
+              className="p-2 rounded-lg bg-(--background-muted) hover:bg-(--background-card) border border-(--border) text-(--foreground-muted) hover:text-(--foreground) cursor-pointer transition-colors"
               title="Copy snippet"
             >
               {copiedSdk ? (

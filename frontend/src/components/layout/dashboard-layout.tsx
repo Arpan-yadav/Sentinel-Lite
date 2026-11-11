@@ -6,8 +6,8 @@ import { Header } from "./header";
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen bg-[var(--background)] text-[var(--foreground)] overflow-hidden font-sans">
-      <Suspense fallback={<div className="w-64 bg-[var(--sidebar-bg)] h-screen" />}>
+    <div className="flex h-screen bg-(--background) text-(--foreground) overflow-hidden font-sans">
+      <Suspense fallback={<div className="w-64 bg-(--sidebar-bg) h-screen" />}>
         <Sidebar />
       </Suspense>
       <div className="flex-1 flex flex-col overflow-hidden">

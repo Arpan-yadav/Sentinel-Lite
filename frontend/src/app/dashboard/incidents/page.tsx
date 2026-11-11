@@ -94,17 +94,17 @@ export default function IncidentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-(--border)">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            <h1 className="text-2xl font-bold tracking-tight text-(--foreground)">
               Security Incidents
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 font-semibold">
               {incidents.length} Records
             </span>
           </div>
-          <p className="text-sm text-[var(--foreground-muted)] font-mono mt-1">
+          <p className="text-sm text-(--foreground-muted) font-mono mt-1">
             Correlated attack clusters requiring analyst triage, containment & response
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function IncidentsPage() {
           <button
             onClick={handleExportCSV}
             disabled={incidents.length === 0}
-            className="px-3.5 py-2 rounded-lg bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground)] text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-2 rounded-lg bg-(--background-card) border border-(--border) hover:border-(--foreground-muted) text-(--foreground) text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
             title="Download CSV report"
           >
             <Download className="h-3.5 w-3.5" />
@@ -123,7 +123,7 @@ export default function IncidentsPage() {
           <button
             onClick={fetchIncidents}
             disabled={loading}
-            className="p-2.5 rounded-lg bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground-muted)] transition-colors cursor-pointer"
+            className="p-2.5 rounded-lg bg-(--background-card) border border-(--border) hover:border-(--foreground-muted) text-(--foreground-muted) transition-colors cursor-pointer"
             title="Refresh list"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -139,9 +139,9 @@ export default function IncidentsPage() {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-xs">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 rounded-2xl bg-(--background-card) border border-(--border) shadow-xs">
         <div className="md:col-span-2 relative">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-[var(--foreground-muted)]" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-(--foreground-muted)" />
           <input
             type="text"
             placeholder="Search by incident title, IP or pattern..."
@@ -150,7 +150,7 @@ export default function IncidentsPage() {
               setSearchQuery(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs text-[var(--foreground)] font-mono transition-colors"
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-(--background-muted) border border-(--border) focus:border-emerald-500 focus:outline-none text-xs text-(--foreground) font-mono transition-colors"
           />
         </div>
 
@@ -161,7 +161,7 @@ export default function IncidentsPage() {
               setSeverityFilter(e.target.value);
               setPage(1);
             }}
-            className="w-full px-3 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs text-[var(--foreground)] font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+            className="w-full px-3 py-2 rounded-lg bg-(--background-muted) border border-(--border) text-xs text-(--foreground) font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="">All Severities</option>
             <option value="critical">Critical (Risk &gt; 75)</option>
@@ -178,7 +178,7 @@ export default function IncidentsPage() {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="w-full px-3 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs text-[var(--foreground)] font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+            className="w-full px-3 py-2 rounded-lg bg-(--background-muted) border border-(--border) text-xs text-(--foreground) font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="">All Statuses</option>
             <option value="new">New</option>
@@ -190,10 +190,10 @@ export default function IncidentsPage() {
       </div>
 
       {/* Incidents Table */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--background-card)] overflow-hidden shadow-xs">
+      <div className="rounded-2xl border border-(--border) bg-(--background-card) overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[var(--background-muted)] border-b border-[var(--border)] text-[var(--foreground-muted)] uppercase font-mono">
+            <thead className="bg-(--background-muted) border-b border-(--border) text-(--foreground-muted) uppercase font-mono">
               <tr>
                 <th className="px-5 py-3.5 font-semibold">Incident Title</th>
                 <th className="px-5 py-3.5 font-semibold">Severity</th>
@@ -204,17 +204,17 @@ export default function IncidentsPage() {
                 <th className="px-5 py-3.5 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border)] text-[var(--foreground)] font-sans">
+            <tbody className="divide-y divide-(--border) text-(--foreground) font-sans">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-[var(--foreground-muted)] font-mono">
+                  <td colSpan={7} className="p-10 text-center text-(--foreground-muted) font-mono">
                     Loading security incident records...
                   </td>
                 </tr>
               ) : incidents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-[var(--foreground-muted)] font-mono">
-                    <ShieldAlert className="h-8 w-8 mx-auto mb-2 text-[var(--foreground-muted)] opacity-50" />
+                  <td colSpan={7} className="p-12 text-center text-(--foreground-muted) font-mono">
+                    <ShieldAlert className="h-8 w-8 mx-auto mb-2 text-(--foreground-muted) opacity-50" />
                     No security incidents found matching filter criteria.
                   </td>
                 </tr>
@@ -224,11 +224,11 @@ export default function IncidentsPage() {
                   return (
                     <tr
                       key={inc.id}
-                      className="hover:bg-[var(--background-muted)]/50 transition-colors group"
+                      className="hover:bg-(--background-muted)/50 transition-colors group"
                     >
-                      <td className="px-5 py-4 font-semibold text-[var(--foreground)] max-w-sm">
+                      <td className="px-5 py-4 font-semibold text-(--foreground) max-w-sm">
                         <div className="truncate font-mono">{inc.title}</div>
-                        <div className="text-[11px] text-[var(--foreground-muted)] font-sans truncate mt-0.5">
+                        <div className="text-[11px] text-(--foreground-muted) font-sans truncate mt-0.5">
                           {inc.description}
                         </div>
                       </td>
@@ -251,9 +251,9 @@ export default function IncidentsPage() {
                         >
                           {inc.risk_score}
                         </span>
-                        <span className="text-[var(--foreground-muted)] font-normal text-[11px]">/100</span>
+                        <span className="text-(--foreground-muted) font-normal text-[11px]">/100</span>
                       </td>
-                      <td className="px-5 py-4 font-mono text-[var(--foreground-muted)] whitespace-nowrap">
+                      <td className="px-5 py-4 font-mono text-(--foreground-muted) whitespace-nowrap">
                         {inc.alert_count} alerts
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
@@ -261,7 +261,7 @@ export default function IncidentsPage() {
                           value={inc.status}
                           disabled={updatingId === inc.id}
                           onChange={(e) => handleStatusChange(inc.id, e.target.value as IncidentStatus)}
-                          className="px-2 py-1 rounded-md bg-[var(--background-muted)] border border-[var(--border)] text-[11px] font-mono uppercase focus:outline-none focus:border-emerald-500 cursor-pointer transition-colors"
+                          className="px-2 py-1 rounded-md bg-(--background-muted) border border-(--border) text-[11px] font-mono uppercase focus:outline-none focus:border-emerald-500 cursor-pointer transition-colors"
                         >
                           <option value="new">NEW</option>
                           <option value="investigating">INVESTIGATING</option>
@@ -269,7 +269,7 @@ export default function IncidentsPage() {
                           <option value="closed">CLOSED</option>
                         </select>
                       </td>
-                      <td className="px-5 py-4 font-mono text-[var(--foreground-muted)] text-[11px] whitespace-nowrap">
+                      <td className="px-5 py-4 font-mono text-(--foreground-muted) text-[11px] whitespace-nowrap">
                         {formatDateTime(inc.created_at)}
                       </td>
                       <td className="px-5 py-4 text-right whitespace-nowrap">
@@ -289,22 +289,22 @@ export default function IncidentsPage() {
         </div>
 
         {/* Pagination Bar */}
-        <div className="px-5 py-3 border-t border-[var(--border)] bg-[var(--background-muted)]/30 flex items-center justify-between text-xs font-mono text-[var(--foreground-muted)]">
+        <div className="px-5 py-3 border-t border-(--border) bg-(--background-muted)/30 flex items-center justify-between text-xs font-mono text-(--foreground-muted)">
           <div>
-            Showing Page <span className="font-semibold text-[var(--foreground)]">{page}</span> ({incidents.length} on page)
+            Showing Page <span className="font-semibold text-(--foreground)">{page}</span> ({incidents.length} on page)
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--background-card)] hover:text-[var(--foreground)] disabled:opacity-40 cursor-pointer"
+              className="p-1.5 rounded-md border border-(--border) bg-(--background-card) hover:text-(--foreground) disabled:opacity-40 cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={incidents.length < pageSize}
-              className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--background-card)] hover:text-[var(--foreground)] disabled:opacity-40 cursor-pointer"
+              className="p-1.5 rounded-md border border-(--border) bg-(--background-card) hover:text-(--foreground) disabled:opacity-40 cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

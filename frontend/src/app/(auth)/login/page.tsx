@@ -28,16 +28,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6 text-[var(--foreground)] transition-colors duration-200">
-      <div className="w-full max-w-md p-8 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-2xl backdrop-blur">
+    <div className="min-h-screen bg-(--background) flex items-center justify-center p-6 text-(--foreground) transition-colors duration-200">
+      <div className="w-full max-w-md p-8 rounded-2xl bg-(--background-card) border border-(--border) shadow-2xl backdrop-blur">
         <div className="flex flex-col items-center mb-8">
           <div className="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 dark:text-emerald-400 mb-3 animate-glow">
             <ShieldAlert className="h-7 w-7" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
+          <h1 className="text-xl font-bold tracking-tight text-(--foreground)">
             Sentinel<span className="text-emerald-500 dark:text-emerald-400">Lite</span> SOC Portal
           </h1>
-          <p className="text-xs text-[var(--foreground-muted)] font-mono mt-1">Authenticate to access threat telemetry</p>
+          <p className="text-xs text-(--foreground-muted) font-mono mt-1">Authenticate to access threat telemetry</p>
         </div>
 
         {error && (
@@ -48,34 +48,34 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-mono text-[var(--foreground-muted)] mb-1.5 uppercase font-semibold">
+            <label className="block text-xs font-mono text-(--foreground-muted) mb-1.5 uppercase font-semibold">
               Analyst Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3 h-4 w-4 text-[var(--foreground-muted)]" />
+              <Mail className="absolute left-3.5 top-3 h-4 w-4 text-(--foreground-muted)" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-sm text-[var(--foreground)] font-mono transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-(--background-muted) border border-(--border) focus:border-emerald-500 focus:outline-none text-sm text-(--foreground) font-mono transition-colors"
                 placeholder="analyst@sentinellite.io"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-mono text-[var(--foreground-muted)] mb-1.5 uppercase font-semibold">
+            <label className="block text-xs font-mono text-(--foreground-muted) mb-1.5 uppercase font-semibold">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-[var(--foreground-muted)]" />
+              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-(--foreground-muted)" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-sm text-[var(--foreground)] font-mono transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-(--background-muted) border border-(--border) focus:border-emerald-500 focus:outline-none text-sm text-(--foreground) font-mono transition-colors"
                 placeholder="••••••••••••"
               />
             </div>
@@ -91,9 +91,9 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-[var(--border)] text-center">
-          <span className="text-[11px] text-[var(--foreground-muted)] font-mono">
-            Demo Credentials: <span className="text-[var(--foreground)] font-semibold">admin@sentinellite.io</span> / <span className="text-[var(--foreground)] font-semibold">AdminPass123!</span>
+        <div className="mt-6 pt-4 border-t border-(--border) text-center">
+          <span className="text-[11px] text-(--foreground-muted) font-mono">
+            Demo Credentials: <span className="text-(--foreground) font-semibold">admin@sentinellite.io</span> / <span className="text-(--foreground) font-semibold">AdminPass123!</span>
           </span>
         </div>
       </div>

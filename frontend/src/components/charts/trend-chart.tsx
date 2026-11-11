@@ -21,7 +21,7 @@ export function TrendChart({ data }: TrendChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-xs text-[var(--foreground-muted)] font-mono">
+      <div className="h-64 flex items-center justify-center text-xs text-(--foreground-muted) font-mono">
         No attack detections recorded yet
       </div>
     );
