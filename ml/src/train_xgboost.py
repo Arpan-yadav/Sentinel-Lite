@@ -27,40 +27,33 @@ logger = logging.getLogger(__name__)
 def configure_xgboost(
     num_classes: int = 2,
     scale_pos_weight: float = 1.0,
+    early_stopping_rounds: int = 20,
 ) -> XGBClassifier:
-    """Create an XGBClassifier with defaults tuned for imbalanced security data.
-
-    Args:
-        num_classes: Number of target classes.
-        scale_pos_weight: Weight to balance positive vs negative class.
-
-    Returns:
-        Configured XGBClassifier instance.
-    """
+    """Create an XGBClassifier with defaults tuned for imbalanced security data."""
     objective = "binary:logistic" if num_classes <= 2 else "multi:softprob"
 
-    model = XGBClassifier(
-        objective=objective,
-        n_estimators=200,
-        max_depth=6,
-        learning_rate=0.1,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        scale_pos_weight=scale_pos_weight,
-        min_child_weight=5,
-        gamma=0.1,
-        reg_alpha=0.1,
-        reg_lambda=1.0,
-        random_state=42,
-        n_jobs=-1,
-        eval_metric="logloss" if num_classes <= 2 else "mlogloss",
-        use_label_encoder=False,
-    )
+    params: dict[str, Any] = {
+        "objective": objective,
+        "n_estimators": 200,
+        "max_depth": 6,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "min_child_weight": 5,
+        "gamma": 0.1,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "random_state": 42,
+        "n_jobs": -1,
+        "eval_metric": "logloss" if num_classes <= 2 else "mlogloss",
+    }
+    if early_stopping_rounds and early_stopping_rounds > 0:
+        params["early_stopping_rounds"] = early_stopping_rounds
+    if num_classes <= 2:
+        params["scale_pos_weight"] = scale_pos_weight
 
-    logger.info(
-        "Configured XGBoost: objective=%s, n_estimators=200, max_depth=6, lr=0.1",
-        objective,
-    )
+    model = XGBClassifier(**params)
+    logger.info("Configured XGBoost: objective=%s, n_estimators=200, max_depth=6, lr=0.1", objective)
     return model
 
 
@@ -73,23 +66,11 @@ def train_model(
     scale_pos_weight: float = 1.0,
     early_stopping_rounds: int = 20,
 ) -> XGBClassifier:
-    """Train an XGBoost model with early stopping.
-
-    Args:
-        X_train: Training feature matrix.
-        y_train: Training labels.
-        X_val: Validation feature matrix.
-        y_val: Validation labels.
-        num_classes: Number of target classes.
-        scale_pos_weight: Weight for class imbalance.
-        early_stopping_rounds: Rounds of no improvement before stopping.
-
-    Returns:
-        Trained XGBClassifier.
-    """
+    """Train an XGBoost model with early stopping."""
     model = configure_xgboost(
         num_classes=num_classes,
         scale_pos_weight=scale_pos_weight,
+        early_stopping_rounds=early_stopping_rounds,
     )
 
     logger.info("Training XGBoost model on %d samples...", len(X_train))
@@ -98,18 +79,17 @@ def train_model(
         X_train,
         y_train,
         eval_set=[(X_val, y_val)],
-        verbose=True,
+        verbose=False,
     )
 
-    # Get best iteration info
-    best_score = model.best_score
-    best_iteration = model.best_iteration
-    logger.info(
-        "Training complete. Best iteration: %d, Best score: %.4f",
-        best_iteration,
-        best_score,
-    )
+    try:
+        best_score = float(model.best_score)
+        best_iteration = int(model.best_iteration)
+    except Exception:
+        best_score = 0.0
+        best_iteration = int(getattr(model, "n_estimators", 200))
 
+    logger.info("Training complete. Best iteration: %d, Best score: %.4f", best_iteration, best_score)
     return model
 
 
@@ -252,6 +232,12 @@ def main() -> None:
 
     # Save model and metadata
     save_model(model, output_dir / "xgboost_model.joblib")
+    if data.get("scaler") is not None:
+        joblib.dump(data["scaler"], output_dir / "scaler.joblib")
+    if data.get("encoder") is not None:
+        joblib.dump(data["encoder"], output_dir / "label_encoder.joblib")
+    with open(output_dir / "feature_names.json", "w", encoding="utf-8") as f:
+        json.dump(data["feature_names"], f, indent=2)
 
     metadata = {
         "model_type": "XGBoost",
@@ -260,7 +246,7 @@ def main() -> None:
         "class_labels": list(data["encoder"].classes_),
         "metrics": metrics,
     }
-    with open(output_dir / "xgboost_metadata.json", "w") as f:
+    with open(output_dir / "xgboost_metadata.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2, default=str)
 
     logger.info("Training pipeline complete. Artifacts saved to %s", output_dir)

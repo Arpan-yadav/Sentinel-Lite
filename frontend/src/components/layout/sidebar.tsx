@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   BarChart3,
   Cpu,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -53,6 +54,13 @@ export function Sidebar() {
       icon: Activity,
       badge: stats?.total_events ? `${stats.total_events}` : null,
       badgeColor: "bg-[var(--background-muted)] text-[var(--foreground-muted)] border border-[var(--border)]",
+    },
+    {
+      label: "Active Defense & TKG",
+      href: "/dashboard/defense",
+      icon: Shield,
+      badge: "LIVE",
+      badgeColor: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30",
     },
     { label: "Analytics & Trends", href: "/dashboard/analytics", icon: BarChart3 },
   ];

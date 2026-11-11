@@ -3,9 +3,10 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Incident, Investigation, Recommendation } from "@/types";
+import { Incident, IncidentStatus, Investigation, Recommendation } from "@/types";
 import { formatDateTime, getSeverityColor } from "@/lib/utils";
 import { IncidentTimeline } from "@/components/incidents/timeline";
+import { IncidentTKGGraph } from "@/components/incidents/tkg-graph";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -15,6 +16,7 @@ import {
   Copy,
   FileSearch,
   ListChecks,
+  Network,
   Play,
   ShieldAlert,
   XCircle,
@@ -28,7 +30,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"ai" | "timeline" | "remediation">("ai");
+  const [activeTab, setActiveTab] = useState<"tkg" | "ai" | "timeline" | "remediation">("tkg");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -64,7 +66,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     fetchIncidentDetails();
   }, [incidentId]);
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: IncidentStatus) => {
     try {
       setUpdatingStatus(true);
       await api.put(`/incidents/${incidentId}`, { status: newStatus });
@@ -167,7 +169,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
               <select
                 value={incident.status}
                 disabled={updatingStatus}
-                onChange={(e) => handleStatusUpdate(e.target.value)}
+                onChange={(e) => handleStatusUpdate(e.target.value as IncidentStatus)}
                 className="px-2.5 py-1.5 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs font-mono uppercase text-[var(--foreground)] focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="new">NEW</option>
@@ -205,10 +207,22 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-[var(--border)] pb-2">
+      <div className="flex items-center gap-2 border-b border-[var(--border)] pb-2 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab("tkg")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-colors cursor-pointer shrink-0 ${
+            activeTab === "tkg"
+              ? "bg-purple-500/10 text-purple-400 border border-purple-500/30"
+              : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+          }`}
+        >
+          <Network className="h-4 w-4" />
+          Attack Path (TKG & MITRE)
+        </button>
+
         <button
           onClick={() => setActiveTab("ai")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-colors cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-colors cursor-pointer shrink-0 ${
             activeTab === "ai"
               ? "bg-[var(--background-muted)] text-emerald-600 dark:text-emerald-400 border border-[var(--border)]"
               : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
@@ -220,7 +234,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
         <button
           onClick={() => setActiveTab("timeline")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-colors cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-colors cursor-pointer shrink-0 ${
             activeTab === "timeline"
               ? "bg-[var(--background-muted)] text-emerald-600 dark:text-emerald-400 border border-[var(--border)]"
               : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
@@ -232,7 +246,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
         <button
           onClick={() => setActiveTab("remediation")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-colors cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold font-mono transition-colors cursor-pointer shrink-0 ${
             activeTab === "remediation"
               ? "bg-[var(--background-muted)] text-emerald-600 dark:text-emerald-400 border border-[var(--border)]"
               : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
@@ -242,6 +256,9 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           Remediation Actions ({recommendations.length})
         </button>
       </div>
+
+      {/* Tab 0: Temporal Knowledge Graph & MITRE Attack Path */}
+      {activeTab === "tkg" && <IncidentTKGGraph incidentId={incidentId} />}
 
       {/* Tab 1: AI Investigation */}
       {activeTab === "ai" && (

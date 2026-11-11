@@ -72,4 +72,9 @@ coverage/
 # Temp
 tmp/
 temp/
+*.db
+*.sqlite
+token.txt
+backend/app/ml_models/*.joblib
+
 

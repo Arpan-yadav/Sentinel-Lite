@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Incident } from "@/types";
+import { Incident, IncidentStatus } from "@/types";
 import { formatDateTime, getSeverityColor } from "@/lib/utils";
 import {
   ArrowUpRight,
@@ -52,7 +52,7 @@ export default function IncidentsPage() {
     fetchIncidents();
   }, [fetchIncidents]);
 
-  const handleStatusChange = async (incidentId: string, newStatus: string) => {
+  const handleStatusChange = async (incidentId: string, newStatus: IncidentStatus) => {
     try {
       setUpdatingId(incidentId);
       await api.put(`/incidents/${incidentId}`, { status: newStatus });
@@ -261,7 +261,7 @@ export default function IncidentsPage() {
                         <select
                           value={inc.status}
                           disabled={updatingId === inc.id}
-                          onChange={(e) => handleStatusChange(inc.id, e.target.value)}
+                          onChange={(e) => handleStatusChange(inc.id, e.target.value as IncidentStatus)}
                           className="px-2 py-1 rounded-md bg-[var(--background-muted)] border border-[var(--border)] text-[11px] font-mono uppercase focus:outline-none focus:border-emerald-500 cursor-pointer transition-colors"
                         >
                           <option value="new">NEW</option>

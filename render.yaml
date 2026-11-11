@@ -1,0 +1,34 @@
+services:
+  # ==========================================
+  # 1. SentinelLite FastAPI Backend Web Service
+  # ==========================================
+  - type: web
+    name: sentinellite-api
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sentinellite-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "https://*.vercel.app,http://localhost:3000,http://localhost:8000"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "480"
+      - key: GEMINI_API_KEY
+        sync: false
+
+databases:
+  # ==========================================
+  # 2. Managed PostgreSQL Instance
+  # ==========================================
+  - name: sentinellite-db
+    databaseName: sentinellite
+    user: sentinellite
+    plan: free

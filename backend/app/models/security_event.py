@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy.types import Uuid, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -15,7 +15,7 @@ class SecurityEvent(Base):
 
     __tablename__ = "security_events"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     source_ip: Mapped[str] = mapped_column(String(45), nullable=False, index=True)
     dest_ip: Mapped[str] = mapped_column(String(45), nullable=False, index=True)
@@ -25,7 +25,7 @@ class SecurityEvent(Base):
     event_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     raw_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     asset_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("assets.id"), nullable=True
+        Uuid(as_uuid=True), ForeignKey("assets.id"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False

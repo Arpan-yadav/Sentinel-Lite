@@ -102,8 +102,8 @@ export default function AnalyticsPage() {
 
         <div className="p-4 rounded-xl bg-[var(--background-card)] border border-[var(--border)]">
           <div className="text-[11px] font-mono text-[var(--foreground-muted)] uppercase">Classifier Precision</div>
-          <div className="text-xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-1">94.2%</div>
-          <div className="text-[10px] text-[var(--foreground-muted)] font-mono mt-0.5">Test F1-score</div>
+          <div className="text-xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-1">99.79%</div>
+          <div className="text-[10px] text-[var(--foreground-muted)] font-mono mt-0.5">Macro F1: 99.77%</div>
         </div>
       </div>
 
@@ -151,27 +151,27 @@ export default function AnalyticsPage() {
           <div className="p-4 rounded-xl bg-[var(--background-muted)] border border-[var(--border)] space-y-1">
             <div className="text-[11px] font-mono text-[var(--foreground-muted)] uppercase">Supervised Classifier</div>
             <div className="text-sm font-bold text-[var(--foreground)]">XGBoost (multi:softprob)</div>
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">F1-Score: 0.94 on Test</div>
+            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">Accuracy: 99.79% | F1: 99.77%</div>
             <p className="text-[11px] text-[var(--foreground-muted)] pt-1">
-              Classifies brute force, port scan, DDoS floods, and credential stuffing vectors with probability scores.
+              Classifies brute force, port scan, DDoS floods, and web application attacks on the authentic CICIDS2017 benchmark.
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-[var(--background-muted)] border border-[var(--border)] space-y-1">
             <div className="text-[11px] font-mono text-[var(--foreground-muted)] uppercase">Anomaly Detection</div>
             <div className="text-sm font-bold text-[var(--foreground)]">Isolation Forest (sklearn)</div>
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">Contamination: 0.08</div>
+            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">Contamination: 0.10</div>
             <p className="text-[11px] text-[var(--foreground-muted)] pt-1">
-              Detects zero-day anomalies and outliers in network packet frequencies and payload sizes.
+              Detects zero-day anomalies and statistical outliers in network packet frequencies and payload sizes.
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-[var(--background-muted)] border border-[var(--border)] space-y-1">
-            <div className="text-[11px] font-mono text-[var(--foreground-muted)] uppercase">Explainability Engine</div>
-            <div className="text-sm font-bold text-[var(--foreground)]">SHAP TreeExplainer</div>
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">Top Feature Vectors</div>
+            <div className="text-[11px] font-mono text-[var(--foreground-muted)] uppercase">TKG & CTI Engine</div>
+            <div className="text-sm font-bold text-[var(--foreground)]">Temporal Graph + MITRE</div>
+            <div className="text-xs text-purple-400 font-mono">Kill-Chain Chokepoint Defense</div>
             <p className="text-[11px] text-[var(--foreground-muted)] pt-1">
-              Provides local feature attribution explaining why an event was categorized as suspicious.
+              Traverses temporal multi-digraphs to predict next attack steps and generate instant active perimeter drop rules.
             </p>
           </div>
         </div>
