@@ -184,7 +184,7 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
 
         {/* SVG Node-Link Canvas */}
         <div className="relative w-full overflow-x-auto bg-(--background-muted)/40 rounded-xl p-4 border border-(--border)">
-          <svg className="w-full h-80 min-w-[700px]" viewBox="0 0 800 300">
+          <svg className="w-full h-80 min-w-175" viewBox="0 0 800 300">
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
