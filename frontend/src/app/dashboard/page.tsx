@@ -118,10 +118,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Top Action Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-(--border)">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            <h1 className="text-2xl font-bold tracking-tight text-(--foreground)">
               SOC Operations Center
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
@@ -129,7 +129,7 @@ export default function DashboardPage() {
               LIVE TELEMETRY
             </span>
           </div>
-          <p className="text-xs text-[var(--foreground-muted)] mt-1 font-mono">
+          <p className="text-xs text-(--foreground-muted) mt-1 font-mono">
             Autonomous threat detection · XGBoost + Isolation Forest · Gemini AI response
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function DashboardPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-2.5 rounded-lg bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground-muted)] transition-colors cursor-pointer"
+            className="p-2.5 rounded-lg bg-(--background-card) border border-(--border) hover:border-(--foreground-muted) text-(--foreground-muted) transition-colors cursor-pointer"
             title={`Refresh telemetry (Last: ${lastRefreshed.toLocaleTimeString()})`}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -186,10 +186,10 @@ export default function DashboardPage() {
         {kpis.map(({ label, value, subtext, icon: Icon, color, bg }) => (
           <div
             key={label}
-            className="p-5 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] flex flex-col justify-between hover:border-[var(--border-strong)] transition-all shadow-xs"
+            className="p-5 rounded-2xl bg-(--background-card) border border-(--border) flex flex-col justify-between hover:border-(--border-strong) transition-all shadow-xs"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-[var(--foreground-muted)] uppercase tracking-wider">
+              <span className="text-xs font-mono text-(--foreground-muted) uppercase tracking-wider">
                 {label}
               </span>
               <div className={`h-9 w-9 rounded-lg border flex items-center justify-center ${bg} ${color}`}>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             </div>
             <div className="mt-4">
               <div className={`text-2xl font-bold font-mono tracking-tight ${color}`}>{value}</div>
-              <div className="text-[11px] text-[var(--foreground-muted)] mt-1 font-mono">{subtext}</div>
+              <div className="text-[11px] text-(--foreground-muted) mt-1 font-mono">{subtext}</div>
             </div>
           </div>
         ))}
@@ -207,47 +207,47 @@ export default function DashboardPage() {
       {/* Main Grid: Severity Chart & Recent Incidents */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Severity Chart Column */}
-        <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-xs flex flex-col justify-between">
+        <div className="p-6 rounded-2xl bg-(--background-card) border border-(--border) shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <h2 className="text-xs font-bold text-[var(--foreground)] tracking-wide uppercase font-mono">
+              <h2 className="text-xs font-bold text-(--foreground) tracking-wide uppercase font-mono">
                 Incident Severity Breakdown
               </h2>
-              <span className="text-[10px] font-mono text-[var(--foreground-muted)]">Live Ratio</span>
+              <span className="text-[10px] font-mono text-(--foreground-muted)">Live Ratio</span>
             </div>
-            <p className="text-xs text-[var(--foreground-muted)] mb-4">
+            <p className="text-xs text-(--foreground-muted) mb-4">
               Multi-factor risk distribution of all active attacks
             </p>
             <SeverityChart data={severityData} />
           </div>
 
-          <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-2 gap-2 text-xs font-mono">
+          <div className="mt-4 pt-4 border-t border-(--border) grid grid-cols-2 gap-2 text-xs font-mono">
             {[
               { color: "bg-red-500", label: "Critical", score: "Risk > 75" },
               { color: "bg-orange-500", label: "High", score: "Risk 60-75" },
               { color: "bg-amber-500", label: "Medium", score: "Risk 35-60" },
               { color: "bg-emerald-500", label: "Low", score: "Risk < 35" },
             ].map(({ color, label, score }) => (
-              <div key={label} className="flex items-center justify-between p-2 rounded-lg bg-[var(--background-muted)]/50">
+              <div key={label} className="flex items-center justify-between p-2 rounded-lg bg-(--background-muted)/50">
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${color}`} />
-                  <span className="text-[var(--foreground)] font-medium text-[11px]">{label}</span>
+                  <span className="text-(--foreground) font-medium text-[11px]">{label}</span>
                 </div>
-                <span className="text-[10px] text-[var(--foreground-muted)]">{score}</span>
+                <span className="text-[10px] text-(--foreground-muted)">{score}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Recent Incidents Column */}
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-2 p-6 rounded-2xl bg-(--background-card) border border-(--border) shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xs font-bold text-[var(--foreground)] tracking-wide uppercase font-mono">
+                <h2 className="text-xs font-bold text-(--foreground) tracking-wide uppercase font-mono">
                   Recent Correlated Incidents
                 </h2>
-                <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
+                <p className="text-xs text-(--foreground-muted) mt-0.5">
                   Automated clusters aggregated from raw event telemetry
                 </p>
               </div>
@@ -261,11 +261,11 @@ export default function DashboardPage() {
             </div>
 
             {loading && incidents.length === 0 ? (
-              <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-xl">
+              <div className="p-12 text-center text-(--foreground-muted) font-mono text-xs border border-dashed border-(--border) rounded-xl">
                 Loading live incident telemetry...
               </div>
             ) : incidents.length === 0 ? (
-              <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-xl">
+              <div className="p-12 text-center text-(--foreground-muted) font-mono text-xs border border-dashed border-(--border) rounded-xl">
                 No incidents yet. Ingest telemetry logs in Events or click &ldquo;Run ML Detection&rdquo;.
               </div>
             ) : (
@@ -277,7 +277,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-mono text-[var(--foreground-muted)]">
+          <div className="mt-4 pt-4 border-t border-(--border) flex items-center justify-between text-[11px] font-mono text-(--foreground-muted)">
             <span className="flex items-center gap-1.5">
               <Zap className="h-3.5 w-3.5 text-emerald-500" />
               Real-time heuristic clustering active

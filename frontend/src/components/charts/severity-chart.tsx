@@ -21,7 +21,7 @@ export function SeverityChart({ data }: SeverityChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="h-48 flex items-center justify-center text-xs text-[var(--foreground-muted)] font-mono">
+      <div className="h-48 flex items-center justify-center text-xs text-(--foreground-muted) font-mono">
         No incident severity data available
       </div>
     );

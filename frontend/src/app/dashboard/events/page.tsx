@@ -105,17 +105,17 @@ export default function EventsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-(--border)">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+            <h1 className="text-2xl font-bold tracking-tight text-(--foreground)">
               Security Event Telemetry
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold">
               {events.length} Events on Page
             </span>
           </div>
-          <p className="text-sm text-[var(--foreground-muted)] font-mono mt-1">
+          <p className="text-sm text-(--foreground-muted) font-mono mt-1">
             Raw ingested packet flows, network session traces & endpoint authentication logs
           </p>
         </div>
@@ -124,7 +124,7 @@ export default function EventsPage() {
           <button
             onClick={handleExportCSV}
             disabled={events.length === 0}
-            className="px-3.5 py-2 rounded-lg bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] text-[var(--foreground)] text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-2 rounded-lg bg-(--background-card) border border-(--border) hover:border-(--foreground-muted) text-(--foreground) text-xs font-mono flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
             title="Download CSV report"
           >
             <Download className="h-3.5 w-3.5" />
@@ -167,9 +167,9 @@ export default function EventsPage() {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] shadow-xs">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 rounded-2xl bg-(--background-card) border border-(--border) shadow-xs">
         <div className="md:col-span-2 relative">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-[var(--foreground-muted)]" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-(--foreground-muted)" />
           <input
             type="text"
             placeholder="Filter by Source IP (e.g. 45.138.16.7 or 10.0.0.25)..."
@@ -179,7 +179,7 @@ export default function EventsPage() {
               setPage(1);
             }}
             onKeyDown={(e) => e.key === "Enter" && fetchEvents()}
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] focus:border-emerald-500 focus:outline-none text-xs text-[var(--foreground)] font-mono transition-colors"
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-(--background-muted) border border-(--border) focus:border-emerald-500 focus:outline-none text-xs text-(--foreground) font-mono transition-colors"
           />
         </div>
 
@@ -190,7 +190,7 @@ export default function EventsPage() {
               setProtocolFilter(e.target.value);
               setPage(1);
             }}
-            className="w-full px-3 py-2 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs text-[var(--foreground)] font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+            className="w-full px-3 py-2 rounded-lg bg-(--background-muted) border border-(--border) text-xs text-(--foreground) font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="">All Protocols</option>
             <option value="TCP">TCP</option>
@@ -202,7 +202,7 @@ export default function EventsPage() {
         <div>
           <button
             onClick={fetchEvents}
-            className="w-full px-4 py-2 rounded-lg bg-[var(--background-muted)] hover:border-[var(--foreground-muted)] border border-[var(--border)] text-[var(--foreground)] text-xs font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full px-4 py-2 rounded-lg bg-(--background-muted) hover:border-(--foreground-muted) border border-(--border) text-(--foreground) text-xs font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <Filter className="h-3.5 w-3.5" />
             Apply Filter
@@ -211,10 +211,10 @@ export default function EventsPage() {
       </div>
 
       {/* Events Table */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--background-card)] overflow-hidden shadow-xs">
+      <div className="rounded-2xl border border-(--border) bg-(--background-card) overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-[var(--background-muted)] border-b border-[var(--border)] text-[var(--foreground-muted)] uppercase">
+            <thead className="bg-(--background-muted) border-b border-(--border) text-(--foreground-muted) uppercase">
               <tr>
                 <th className="px-5 py-3.5 font-semibold">Event Timestamp</th>
                 <th className="px-5 py-3.5 font-semibold">Source Vector</th>
@@ -223,37 +223,37 @@ export default function EventsPage() {
                 <th className="px-5 py-3.5 font-semibold">Event Classification</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border)] text-[var(--foreground)]">
+            <tbody className="divide-y divide-(--border) text-(--foreground)">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-10 text-center text-[var(--foreground-muted)]">
+                  <td colSpan={5} className="p-10 text-center text-(--foreground-muted)">
                     Loading raw security event stream...
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-[var(--foreground-muted)]">
-                    <Activity className="h-8 w-8 mx-auto mb-2 text-[var(--foreground-muted)] opacity-50" />
+                  <td colSpan={5} className="p-12 text-center text-(--foreground-muted)">
+                    <Activity className="h-8 w-8 mx-auto mb-2 text-(--foreground-muted) opacity-50" />
                     No security events found. Ingest logs using the upload button above.
                   </td>
                 </tr>
               ) : (
                 events.map((ev) => (
-                  <tr key={ev.id} className="hover:bg-[var(--background-muted)]/50 transition-colors">
-                    <td className="px-5 py-3 text-[var(--foreground-muted)] whitespace-nowrap">
+                  <tr key={ev.id} className="hover:bg-(--background-muted)/50 transition-colors">
+                    <td className="px-5 py-3 text-(--foreground-muted) whitespace-nowrap">
                       {formatDateTime(ev.timestamp)}
                     </td>
-                    <td className="px-5 py-3 font-semibold text-[var(--foreground)] whitespace-nowrap">
+                    <td className="px-5 py-3 font-semibold text-(--foreground) whitespace-nowrap">
                       <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{ev.source_ip}</span>
                       {ev.source_port && (
-                        <span className="text-[var(--foreground-muted)] font-normal text-[11px]">:{ev.source_port}</span>
+                        <span className="text-(--foreground-muted) font-normal text-[11px]">:{ev.source_port}</span>
                       )}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap">
                       <span className="font-mono">{ev.dest_ip}</span>
                     </td>
-                    <td className="px-5 py-3 text-[var(--foreground-muted)] whitespace-nowrap">
-                      <span className="px-1.5 py-0.5 rounded bg-[var(--background-muted)] text-[11px] font-semibold">
+                    <td className="px-5 py-3 text-(--foreground-muted) whitespace-nowrap">
+                      <span className="px-1.5 py-0.5 rounded bg-(--background-muted) text-[11px] font-semibold">
                         {ev.protocol || "TCP"}
                       </span>{" "}
                       / <span className="font-mono">{ev.dest_port}</span>
@@ -271,22 +271,22 @@ export default function EventsPage() {
         </div>
 
         {/* Pagination Controls */}
-        <div className="px-5 py-3 border-t border-[var(--border)] bg-[var(--background-muted)]/30 flex items-center justify-between text-xs font-mono text-[var(--foreground-muted)]">
+        <div className="px-5 py-3 border-t border-(--border) bg-(--background-muted)/30 flex items-center justify-between text-xs font-mono text-(--foreground-muted)">
           <div>
-            Page <span className="font-semibold text-[var(--foreground)]">{page}</span> ({events.length} events displayed)
+            Page <span className="font-semibold text-(--foreground)">{page}</span> ({events.length} events displayed)
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--background-card)] hover:text-[var(--foreground)] disabled:opacity-40 cursor-pointer"
+              className="p-1.5 rounded-md border border-(--border) bg-(--background-card) hover:text-(--foreground) disabled:opacity-40 cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={events.length < pageSize}
-              className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--background-card)] hover:text-[var(--foreground)] disabled:opacity-40 cursor-pointer"
+              className="p-1.5 rounded-md border border-(--border) bg-(--background-card) hover:text-(--foreground) disabled:opacity-40 cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

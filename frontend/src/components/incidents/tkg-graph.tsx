@@ -107,7 +107,7 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
 
   if (loading || !tkg) {
     return (
-      <div className="p-12 text-center text-[var(--foreground-muted)] font-mono text-xs border border-dashed border-[var(--border)] rounded-2xl">
+      <div className="p-12 text-center text-(--foreground-muted) font-mono text-xs border border-dashed border-(--border) rounded-2xl">
         <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-emerald-500" />
         Traversing temporal knowledge graph & correlating MITRE ATT&CK kill-chain...
       </div>
@@ -122,22 +122,22 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
   return (
     <div className="space-y-6 font-sans">
       {/* Top Banner: Kill Chain Stage & Predictive Warning */}
-      <div className="p-5 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+      <div className="p-5 rounded-2xl bg-(--background-card) border border-(--border) flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-purple-500/10 text-purple-400 border border-purple-500/20 font-semibold flex items-center gap-1">
               <Zap className="h-3 w-3" /> TKG Attack Path Inference
             </span>
-            <span className="text-xs font-mono text-[var(--foreground-muted)]">
+            <span className="text-xs font-mono text-(--foreground-muted)">
               PROBABILITY: <span className="font-bold text-purple-400">{Math.round(tkg.predicted_next_step.probability * 100)}%</span>
             </span>
           </div>
-          <h3 className="text-base font-bold text-[var(--foreground)]">
+          <h3 className="text-base font-bold text-(--foreground)">
             Projected Next Kill-Chain Step:{" "}
             <span className="text-purple-400">{tkg.predicted_next_step.technique_id} — {tkg.predicted_next_step.name}</span>
           </h3>
-          <p className="text-xs text-[var(--foreground-muted)]">
-            Estimated time-to-impact: <span className="text-[var(--foreground)] font-mono">{tkg.predicted_next_step.expected_window}</span>. Recommended D3FEND Mitigation:{" "}
+          <p className="text-xs text-(--foreground-muted)">
+            Estimated time-to-impact: <span className="text-(--foreground) font-mono">{tkg.predicted_next_step.expected_window}</span>. Recommended D3FEND Mitigation:{" "}
             <span className="text-emerald-500 font-mono">{tkg.predicted_next_step.d3fend_mitigation}</span>
           </p>
         </div>
@@ -163,13 +163,13 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
       )}
 
       {/* Interactive Visual Graph Canvas */}
-      <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-4 shadow-xs">
+      <div className="p-6 rounded-2xl bg-(--background-card) border border-(--border) space-y-4 shadow-xs">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-mono uppercase font-bold text-[var(--foreground)] tracking-wider">
+            <h4 className="text-xs font-mono uppercase font-bold text-(--foreground) tracking-wider">
               Temporal Graph Trajectory & Chokepoints
             </h4>
-            <p className="text-[11px] text-[var(--foreground-muted)]">
+            <p className="text-[11px] text-(--foreground-muted)">
               Directed multi-relational graph tracing actor actions &rarr; MITRE techniques &rarr; internal assets
             </p>
           </div>
@@ -183,7 +183,7 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
         </div>
 
         {/* SVG Node-Link Canvas */}
-        <div className="relative w-full overflow-x-auto bg-[var(--background-muted)]/40 rounded-xl p-4 border border-[var(--border)]">
+        <div className="relative w-full overflow-x-auto bg-(--background-muted)/40 rounded-xl p-4 border border-(--border)">
           <svg className="w-full h-80 min-w-[700px]" viewBox="0 0 800 300">
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -268,27 +268,27 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
       </div>
 
       {/* Active Defense Playbook Commands Box */}
-      <div className="p-6 rounded-2xl bg-[var(--background-card)] border border-[var(--border)] space-y-4 shadow-xs">
+      <div className="p-6 rounded-2xl bg-(--background-card) border border-(--border) space-y-4 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h4 className="text-xs font-mono uppercase font-bold text-[var(--foreground)] tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-mono uppercase font-bold text-(--foreground) tracking-wider flex items-center gap-2">
               <Shield className="h-4 w-4 text-emerald-500" />
               Active Mitigation Playbook (Zero-Downtime Containment)
             </h4>
-            <p className="text-[11px] text-[var(--foreground-muted)]">
+            <p className="text-[11px] text-(--foreground-muted)">
               Instant perimeter rules to sever the predicted attack path before lateral propagation occurs
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[var(--background-muted)] border border-[var(--border)] text-xs font-mono">
+          <div className="flex items-center gap-1.5 p-1 rounded-lg bg-(--background-muted) border border-(--border) text-xs font-mono">
             {["iptables", "ufw", "nginx", "aws_cli", "cloudflare_api"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActivePlaybookTab(tab)}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase transition-colors cursor-pointer ${
                   activePlaybookTab === tab
-                    ? "bg-[var(--background-card)] text-emerald-400 border border-[var(--border)] shadow-xs"
-                    : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                    ? "bg-(--background-card) text-emerald-400 border border-(--border) shadow-xs"
+                    : "text-(--foreground-muted) hover:text-(--foreground)"
                 }`}
               >
                 {tab.replace("_", " ")}

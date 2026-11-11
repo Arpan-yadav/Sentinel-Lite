@@ -9,7 +9,7 @@ export function IncidentCard({ incident }: { incident: Incident }) {
   const sev = getSeverityColor(incident.severity);
 
   return (
-    <div className="p-5 rounded-xl bg-[var(--background-card)] border border-[var(--border)] hover:border-[var(--foreground-muted)] transition-all flex flex-col justify-between group shadow-sm">
+    <div className="p-5 rounded-xl bg-(--background-card) border border-(--border) hover:border-(--foreground-muted) transition-all flex flex-col justify-between group shadow-sm">
       <div>
         <div className="flex items-center justify-between gap-3 mb-2">
           <span
@@ -17,7 +17,7 @@ export function IncidentCard({ incident }: { incident: Incident }) {
           >
             {incident.severity}
           </span>
-          <span className="text-xs font-mono text-[var(--foreground-muted)]">
+          <span className="text-xs font-mono text-(--foreground-muted)">
             RISK:{" "}
             <span
               className={`font-bold ${
@@ -33,22 +33,22 @@ export function IncidentCard({ incident }: { incident: Incident }) {
           </span>
         </div>
 
-        <h3 className="font-semibold text-[var(--foreground)] text-sm group-hover:text-emerald-400 transition-colors line-clamp-1">
+        <h3 className="font-semibold text-(--foreground) text-sm group-hover:text-emerald-400 transition-colors line-clamp-1">
           {incident.title}
         </h3>
-        <p className="text-xs text-[var(--foreground-muted)] mt-1 line-clamp-2 leading-relaxed">
+        <p className="text-xs text-(--foreground-muted) mt-1 line-clamp-2 leading-relaxed">
           {incident.description || "Aggregated suspicious telemetry."}
         </p>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--foreground-muted)]">
+      <div className="mt-4 pt-3 border-t border-(--border) flex items-center justify-between text-xs text-(--foreground-muted)">
         <div className="flex items-center gap-1.5 font-mono text-[11px]">
-          <Clock className="h-3 w-3 text-[var(--foreground-muted)]" />
+          <Clock className="h-3 w-3 text-(--foreground-muted)" />
           {formatDateTime(incident.created_at)}
         </div>
         <Link
           href={`/dashboard/incidents/${incident.id}`}
-          className="flex items-center gap-1 text-[var(--foreground)] hover:text-emerald-400 font-medium"
+          className="flex items-center gap-1 text-(--foreground) hover:text-emerald-400 font-medium"
         >
           Investigate <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
