@@ -75,6 +75,6 @@ temp/
 *.db
 *.sqlite
 token.txt
-backend/app/ml_models/*.joblib
+!backend/app/ml_models/*.joblib
 
 

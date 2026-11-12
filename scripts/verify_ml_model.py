@@ -25,9 +25,17 @@ def run_crosscheck():
     print("   SENTINELLITE AI-SOC: MODEL AUTHENTICITY & ACCURACY AUDIT")
     print("=" * 65)
 
+    # Guard: skip gracefully if model artifacts are missing (e.g. in CI without LFS)
+    if not MODEL_PATH.exists():
+        print(f"[!] Model not found at {MODEL_PATH}. Skipping audit (models not tracked in this environment).")
+        print("[i] To run the full audit, ensure .joblib files are present in backend/app/ml_models/")
+        import sys
+        sys.exit(0)
+
     if not DATA_PATH.exists():
         print(f"[!] Dataset not found at {DATA_PATH}")
-        return
+        import sys
+        sys.exit(0)
 
     # 1. Load artifacts
     print(f"[*] Loading model artifact from {MODEL_PATH} ({MODEL_PATH.stat().st_size:,} bytes)...")

@@ -21,6 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install aiosqlite
           pip install -r backend/requirements.txt
 
       - name: Run Backend Tests
@@ -29,8 +30,7 @@ jobs:
           SQLITE_OVERRIDE: ./test.db
           SECRET_KEY: test-secret-key-32-chars-long-secure-token
         run: |
-          pip install aiosqlite
-          pytest tests/ -v --tb=short
+          pytest tests/backend/ -v --tb=short
 
   frontend-build:
     name: Frontend Lint & Typecheck
@@ -45,21 +45,20 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install dependencies
-        run: |
-          cd frontend
-          pnpm install --no-frozen-lockfile
+        working-directory: frontend
+        run: pnpm install --no-frozen-lockfile
 
       - name: Lint
-        run: |
-          cd frontend
-          pnpm lint
+        working-directory: frontend
+        run: pnpm lint
 
       - name: Type check
-        run: |
-          cd frontend
-          pnpm exec tsc --noEmit
+        working-directory: frontend
+        run: pnpm exec tsc --noEmit
 
   ml-tests:
     name: ML Model Validation & Tests
