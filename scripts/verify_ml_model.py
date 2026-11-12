@@ -97,7 +97,12 @@ def run_crosscheck():
     print("  Running 5-fold cross validation across all 12,500 flows...")
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     X_scaled = scaler.transform(X)
-    cv_scores = cross_val_score(model, X_scaled, y, cv=skf, scoring="accuracy")
+    # Clone model and disable early_stopping_rounds so cross_val_score
+    # works without needing an eval_set (early stopping requires validation data)
+    from sklearn.base import clone
+    cv_model = clone(model)
+    cv_model.set_params(early_stopping_rounds=None)
+    cv_scores = cross_val_score(cv_model, X_scaled, y, cv=skf, scoring="accuracy")
 
     for fold_idx, score in enumerate(cv_scores, 1):
         print(f"  Fold {fold_idx}: {score * 100:.2f}%")
