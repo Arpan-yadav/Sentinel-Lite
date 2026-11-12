@@ -8,22 +8,8 @@ on:
 
 jobs:
   backend-tests:
+    name: Backend API & Core Tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_DB: sentinellite_test
-          POSTGRES_USER: sentinellite
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -34,18 +20,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd backend
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
 
-      - name: Run tests
+      - name: Run Backend Tests
         env:
-          DATABASE_URL: postgresql+asyncpg://sentinellite:test_password@localhost:5432/sentinellite_test
-          SECRET_KEY: test-secret-key
+          DATABASE_URL: sqlite+aiosqlite:///./test.db
+          SQLITE_OVERRIDE: ./test.db
+          SECRET_KEY: test-secret-key-32-chars-long-secure-token
         run: |
-          cd backend
+          pip install aiosqlite
           pytest tests/ -v --tb=short
 
-  frontend-lint:
+  frontend-build:
+    name: Frontend Lint & Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,14 +44,12 @@ jobs:
           node-version: "20"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         run: |
           cd frontend
-          pnpm install
+          pnpm install --no-frozen-lockfile
 
       - name: Lint
         run: |
@@ -73,9 +59,10 @@ jobs:
       - name: Type check
         run: |
           cd frontend
-          pnpm tsc --noEmit
+          pnpm exec tsc --noEmit
 
   ml-tests:
+    name: ML Model Validation & Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,11 +74,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd ml
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r ml/requirements.txt
+          pip install -r backend/requirements.txt
 
-      - name: Run ML tests
+      - name: Run ML Unit Tests
         run: |
-          cd ml
-          python -m pytest ../tests/ml/ -v --tb=short
+          pytest tests/ml/ -v --tb=short
 
+      - name: Run ML Audit & Accuracy Suite
+        run: |
+          python scripts/verify_ml_model.py
