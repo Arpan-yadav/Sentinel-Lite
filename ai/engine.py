@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 from typing import Any, Dict, List, Optional
 
@@ -20,18 +21,31 @@ except Exception:
 
 logger = logging.getLogger(__name__)
 
-# List of models to try in priority order
+# List of models to try in priority order (ultra-fast lite first, fallback to standard)
 CANDIDATE_MODELS = [
+    "gemini-3.5-flash-lite",
     "gemini-3.5-flash",
-    "gemini-3.8-flash",
     "gemini-flash-latest",
 ]
+
+
+def _extract_json(text: str) -> Dict[str, Any]:
+    """Robustly extract and parse JSON object from LLM response text."""
+    text = text.strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+    if match:
+        text = match.group(1).strip()
+    elif "{" in text and "}" in text:
+        start_idx = text.find("{")
+        end_idx = text.rfind("}") + 1
+        text = text[start_idx:end_idx].strip()
+    return json.loads(text)
 
 
 class GeminiInvestigationEngine:
     """Orchestrates LLM-based investigation workflows using Google Gemini API."""
 
-    def __init__(self, api_key: str = "", model_name: str = "gemini-3.5-flash"):
+    def __init__(self, api_key: str = "", model_name: str = "gemini-3.5-flash-lite"):
         self.api_key = api_key.strip()
         self.model_name = model_name
         self.client_type: Optional[str] = None
@@ -72,10 +86,13 @@ class GeminiInvestigationEngine:
             active_client: Any = self._client
             for candidate in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
                 try:
-                    res = await asyncio.to_thread(
-                        active_client.models.generate_content,
-                        model=candidate,
-                        contents="Respond with 'OK'",
+                    res = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            active_client.models.generate_content,
+                            model=candidate,
+                            contents="Respond with 'OK'",
+                        ),
+                        timeout=8.0,
                     )
                     elapsed = int((time.perf_counter() - start) * 1000)
                     self.model_name = candidate
@@ -153,19 +170,15 @@ class GeminiInvestigationEngine:
             for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
                 try:
                     full_prompt = f"{INVESTIGATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
-                    response = await asyncio.to_thread(
-                        active_client.models.generate_content,
-                        model=model_to_use,
-                        contents=full_prompt,
+                    response = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            active_client.models.generate_content,
+                            model=model_to_use,
+                            contents=full_prompt,
+                        ),
+                        timeout=12.0,
                     )
-                    clean_text = response.text.strip()
-                    if clean_text.startswith("```json"):
-                        clean_text = clean_text[7:]
-                    if clean_text.startswith("```"):
-                        clean_text = clean_text[3:]
-                    if clean_text.endswith("```"):
-                        clean_text = clean_text[:-3]
-                    data = json.loads(clean_text.strip())
+                    data = _extract_json(response.text)
                     return InvestigationResult(**data)
                 except Exception as e:
                     logger.warning(f"Generation with {model_to_use} encountered: {e}")
@@ -198,19 +211,15 @@ class GeminiInvestigationEngine:
             for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
                 try:
                     full_prompt = f"{REMEDIATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
-                    response = await asyncio.to_thread(
-                        active_client.models.generate_content,
-                        model=model_to_use,
-                        contents=full_prompt,
+                    response = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            active_client.models.generate_content,
+                            model=model_to_use,
+                            contents=full_prompt,
+                        ),
+                        timeout=12.0,
                     )
-                    clean_text = response.text.strip()
-                    if clean_text.startswith("```json"):
-                        clean_text = clean_text[7:]
-                    if clean_text.startswith("```"):
-                        clean_text = clean_text[3:]
-                    if clean_text.endswith("```"):
-                        clean_text = clean_text[:-3]
-                    data = json.loads(clean_text.strip())
+                    data = _extract_json(response.text)
                     return RemediationResult(**data)
                 except Exception as e:
                     logger.warning(f"Remediation with {model_to_use} failed: {e}")

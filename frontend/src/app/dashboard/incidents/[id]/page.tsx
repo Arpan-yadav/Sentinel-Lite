@@ -8,6 +8,7 @@ import { formatDateTime, getSeverityColor } from "@/lib/utils";
 import { IncidentTimeline } from "@/components/incidents/timeline";
 import { IncidentTKGGraph } from "@/components/incidents/tkg-graph";
 import {
+  AlertCircle,
   AlertTriangle,
   ArrowLeft,
   Bot,
@@ -16,6 +17,7 @@ import {
   Copy,
   FileSearch,
   ListChecks,
+  Loader2,
   Network,
   Play,
   XCircle,
@@ -35,10 +37,12 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchIncidentDetails = useCallback(async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const [incRes, timelineRes, recRes] = await Promise.allSettled([
         api.get<Incident>(`/incidents/${incidentId}`),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,12 +86,17 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const handleGenerateInvestigation = async () => {
     try {
       setGenerating(true);
+      setErrorMsg(null);
       const res = await api.post<Investigation>(`/investigation/${incidentId}/generate`);
       setInvestigation(res.data);
       const recRes = await api.get<Recommendation[]>(`/recommendations/incident/${incidentId}`);
       setRecommendations(recRes.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to generate investigation:", err);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyErr = err as any;
+      const detail = anyErr?.response?.data?.detail || anyErr?.message || "Generation request failed";
+      setErrorMsg(`AI Synthesis Notice: ${detail}. If running locally, please ensure the backend is running at http://127.0.0.1:8000.`);
     } finally {
       setGenerating(false);
     }
@@ -275,13 +284,28 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
                   Trigger the Gemini LLM Reasoning Engine to analyze telemetry evidence, identify MITRE ATT&CK techniques, and generate remediation proposals.
                 </p>
               </div>
+              {errorMsg && (
+                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2 max-w-lg mx-auto text-left">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
               <button
                 onClick={handleGenerateInvestigation}
                 disabled={generating}
                 className="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs inline-flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
               >
-                <Play className="h-3.5 w-3.5 fill-current" />
-                {generating ? "Synthesizing with Gemini AI..." : "Generate AI Investigation"}
+                {generating ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Synthesizing with Gemini AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-3.5 w-3.5 fill-current" />
+                    <span>Generate AI Investigation</span>
+                  </>
+                )}
               </button>
             </div>
           ) : (
