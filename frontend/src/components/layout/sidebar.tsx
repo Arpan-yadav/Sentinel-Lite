@@ -11,13 +11,17 @@ import {
   BarChart3,
   Cpu,
   Shield,
+  Building2,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { DashboardStats } from "@/types";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
@@ -62,7 +66,14 @@ export function Sidebar() {
       badge: "LIVE",
       badgeColor: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30",
     },
-    { label: "Analytics & Trends", href: "/dashboard/analytics", icon: BarChart3 },
+    { label: "Analytics & Data Studio", href: "/dashboard/analytics", icon: BarChart3 },
+    {
+      label: "Admin & Clients",
+      href: "/dashboard/admin",
+      icon: Building2,
+      badge: "ADMIN",
+      badgeColor: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30",
+    },
   ];
 
   return (
@@ -85,7 +96,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
         <div className="px-3 pb-2 text-[10px] font-semibold tracking-wider text-(--foreground-muted) uppercase font-mono">
-          Operations
+          Operations & Governance
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -129,6 +140,21 @@ export function Sidebar() {
         })}
       </nav>
 
+      {/* Current Operator Badge */}
+      <div className="px-4 py-2">
+        <div className="rounded-lg bg-(--background-muted)/50 border border-(--border) px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
+            <div className="text-[11px] font-mono truncate max-w-[120px] text-(--foreground)">
+              {user?.email || "analyst@sentinellite.io"}
+            </div>
+          </div>
+          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            {user?.role || "ANALYST"}
+          </span>
+        </div>
+      </div>
+
       {/* System Status Pill */}
       <div className="p-4 border-t border-(--border) mb-4">
         <div className="rounded-xl bg-(--background-muted) border border-(--border) p-3">
@@ -138,12 +164,12 @@ export function Sidebar() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-xs font-mono font-medium text-(--foreground)">ML Engine Active</span>
+              <span className="text-xs font-mono font-medium text-(--foreground)">ML & AI Active</span>
             </div>
             <Cpu className="h-3.5 w-3.5 text-emerald-500" />
           </div>
           <div className="text-[11px] text-(--foreground-muted) mt-1.5 font-mono">
-            XGBoost + Isolation Forest
+            Gemini 3.5 + XGBoost 99.8%
           </div>
         </div>
       </div>

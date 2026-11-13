@@ -11,3 +11,4 @@ from app.models.model_prediction import ModelPrediction  # noqa: F401
 from app.models.recommendation import Recommendation  # noqa: F401
 from app.models.approval import Approval  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.client import Client  # noqa: F401

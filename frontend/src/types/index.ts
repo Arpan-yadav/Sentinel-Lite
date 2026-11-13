@@ -11,6 +11,58 @@ export interface User {
   created_at: string;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  industry: string;
+  tier: string;
+  status: string;
+  network_cidr: string;
+  contact_email: string;
+  health_score: number;
+  active_incidents: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AnalystUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface AiStatus {
+  gemini_api_configured: boolean;
+  key_prefix: string;
+  status: "connected" | "fallback" | "unconfigured";
+  model: string;
+  sdk?: string;
+  latency_ms: number;
+  message: string;
+}
+
+export interface TelemetrySample {
+  id: string;
+  timestamp: string;
+  time_minute: string;
+  attack_type: string;
+  protocol: string;
+  source_ip: string;
+  dest_ip: string;
+  dest_port: number;
+  flow_duration_ms: number;
+  fwd_packets: number;
+  packet_length_mean: number;
+  packet_length_std: number;
+  anomaly_score: number;
+  confidence: number;
+  severity: SeverityLevel;
+  risk_score: number;
+}
+
 export interface SecurityEvent {
   id: string;
   timestamp: string;
@@ -94,4 +146,3 @@ export interface SeverityDistribution {
   severity: string;
   count: number;
 }
-

@@ -83,3 +83,32 @@ def test_ml_predictor_heuristics():
     assert pred["prediction"] == "PortScan"
     assert pred["confidence"] >= 0.85
     assert pred["anomaly_score"] > 0.0
+
+
+def test_client_schema_and_defaults():
+    """Verify Client models and schemas validate properly."""
+    from app.schemas.client import ClientCreate
+    client = ClientCreate(
+        name="Test FinTech Bank",
+        industry="Finance",
+        tier="Enterprise",
+        status="active",
+        network_cidr="10.50.0.0/16",
+        contact_email="ciso@testbank.com",
+        health_score=95,
+        active_incidents=1,
+    )
+    assert client.name == "Test FinTech Bank"
+    assert client.health_score == 95
+
+
+def test_telemetry_samples_generator():
+    """Verify authentic CICIDS2017 telemetry samples generation for analytics."""
+    from app.api.v1.analytics import _load_stratified_telemetry_samples
+    samples = _load_stratified_telemetry_samples(limit=25)
+    assert len(samples) > 0
+    s0 = samples[0]
+    assert "attack_type" in s0
+    assert "anomaly_score" in s0
+    assert "packet_length_mean" in s0
+    assert "severity" in s0
