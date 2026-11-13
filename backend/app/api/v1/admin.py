@@ -136,3 +136,4 @@ async def toggle_analyst_status(
         is_active=user.is_active,
         created_at=user.created_at.isoformat() if user.created_at else "",
     )
+

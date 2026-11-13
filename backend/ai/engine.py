@@ -8,6 +8,16 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
+try:
+    from google import genai
+except Exception:
+    genai = None  # type: ignore
+
+try:
+    import google.generativeai as legacy_genai
+except Exception:
+    legacy_genai = None  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 # List of models to try in priority order
@@ -28,21 +38,21 @@ class GeminiInvestigationEngine:
         self._client = None
 
         if self.api_key:
-            # Try modern google.genai SDK first
-            try:
-                from google import genai
-                self._client = genai.Client(api_key=self.api_key)
-                self.client_type = "google.genai"
-                logger.info(f"Initialized Gemini engine with google.genai ({self.model_name})")
-            except Exception as e:
-                logger.warning(f"Could not initialize google.genai ({e}), attempting google.generativeai fallback.")
+            if genai is not None:
                 try:
-                    import google.generativeai as legacy_genai
+                    self._client = genai.Client(api_key=self.api_key)
+                    self.client_type = "google.genai"
+                    logger.info(f"Initialized Gemini engine with google.genai ({self.model_name})")
+                except Exception as e:
+                    logger.warning(f"Could not initialize google.genai: {e}")
+
+            if not self._client and legacy_genai is not None:
+                try:
                     legacy_genai.configure(api_key=self.api_key)
                     self._client = legacy_genai.GenerativeModel(model_name=self.model_name)
                     self.client_type = "google.generativeai"
                 except Exception as ex:
-                    logger.error(f"Failed to initialize any Gemini client: {ex}")
+                    logger.error(f"Failed to initialize legacy Gemini client: {ex}")
                     self._client = None
 
     async def test_connection(self) -> Dict[str, Any]:
@@ -79,8 +89,7 @@ class GeminiInvestigationEngine:
                     logger.debug(f"Candidate {candidate} failed: {e}")
                     continue
 
-        elif self.client_type == "google.generativeai":
-            import google.generativeai as legacy_genai
+        elif self.client_type == "google.generativeai" and legacy_genai is not None:
             for candidate in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
                 try:
                     m = legacy_genai.GenerativeModel(candidate)

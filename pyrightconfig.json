@@ -1,0 +1,16 @@
+{
+  "include": [
+    "backend",
+    "ml",
+    "tests",
+    "scripts"
+  ],
+  "extraPaths": [
+    "./backend",
+    ".",
+    "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/Lib/site-packages"
+  ],
+  "pythonVersion": "3.13",
+  "pythonPlatform": "Windows",
+  "reportMissingImports": "none"
+}

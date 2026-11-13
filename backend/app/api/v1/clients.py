@@ -164,3 +164,4 @@ async def delete_client(
         )
     await db.delete(client)
     await db.commit()
+

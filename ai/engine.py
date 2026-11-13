@@ -2,42 +2,129 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
-import google.generativeai as genai
+try:
+    from google import genai
+except Exception:
+    genai = None  # type: ignore
 
-from ai.grounding import extract_evidence, format_timeline
-from ai.prompts.investigation import INVESTIGATION_SYSTEM_PROMPT, INVESTIGATION_USER_TEMPLATE
-from ai.prompts.remediation import REMEDIATION_SYSTEM_PROMPT, REMEDIATION_USER_TEMPLATE
-from ai.schemas import InvestigationResult, RemediationResult
+try:
+    import google.generativeai as legacy_genai
+except Exception:
+    legacy_genai = None  # type: ignore
 
 logger = logging.getLogger(__name__)
+
+# List of models to try in priority order
+CANDIDATE_MODELS = [
+    "gemini-3.5-flash",
+    "gemini-3.8-flash",
+    "gemini-flash-latest",
+]
 
 
 class GeminiInvestigationEngine:
     """Orchestrates LLM-based investigation workflows using Google Gemini API."""
 
-    def __init__(self, api_key: str = "", model_name: str = "gemini-1.5-flash"):
-        self.api_key = api_key
+    def __init__(self, api_key: str = "", model_name: str = "gemini-3.5-flash"):
+        self.api_key = api_key.strip()
         self.model_name = model_name
+        self.client_type = None
+        self._client = None
+
         if self.api_key:
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel(
-                model_name=self.model_name,
-                system_instruction=INVESTIGATION_SYSTEM_PROMPT,
-            )
-        else:
-            self.model = None
+            if genai is not None:
+                try:
+                    self._client = genai.Client(api_key=self.api_key)
+                    self.client_type = "google.genai"
+                    logger.info(f"Initialized Gemini engine with google.genai ({self.model_name})")
+                except Exception as e:
+                    logger.warning(f"Could not initialize google.genai: {e}")
+
+            if not self._client and legacy_genai is not None:
+                try:
+                    legacy_genai.configure(api_key=self.api_key)
+                    self._client = legacy_genai.GenerativeModel(model_name=self.model_name)
+                    self.client_type = "google.generativeai"
+                except Exception as ex:
+                    logger.error(f"Failed to initialize legacy Gemini client: {ex}")
+                    self._client = None
+
+    async def test_connection(self) -> Dict[str, Any]:
+        """Test API key validity, measure latency, and detect active model."""
+        if not self.api_key:
+            return {
+                "status": "unconfigured",
+                "message": "No GEMINI_API_KEY set in environment",
+                "model": "None",
+                "latency_ms": 0,
+            }
+
+        start = time.perf_counter()
+        active_model = self.model_name
+
+        if self.client_type == "google.genai":
+            for candidate in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
+                try:
+                    res = await asyncio.to_thread(
+                        self._client.models.generate_content,
+                        model=candidate,
+                        contents="Respond with 'OK'",
+                    )
+                    elapsed = int((time.perf_counter() - start) * 1000)
+                    self.model_name = candidate
+                    return {
+                        "status": "connected",
+                        "model": candidate,
+                        "sdk": "google.genai",
+                        "latency_ms": elapsed,
+                        "message": f"Successfully authenticated with Google Gemini ({candidate})",
+                    }
+                except Exception as e:
+                    logger.debug(f"Candidate {candidate} failed: {e}")
+                    continue
+
+        elif self.client_type == "google.generativeai" and legacy_genai is not None:
+            for candidate in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
+                try:
+                    m = legacy_genai.GenerativeModel(candidate)
+                    res = m.generate_content("Respond with 'OK'")
+                    elapsed = int((time.perf_counter() - start) * 1000)
+                    self.model_name = candidate
+                    return {
+                        "status": "connected",
+                        "model": candidate,
+                        "sdk": "google.generativeai",
+                        "latency_ms": elapsed,
+                        "message": f"Successfully authenticated with Google Gemini ({candidate})",
+                    }
+                except Exception as e:
+                    logger.debug(f"Candidate {candidate} failed: {e}")
+                    continue
+
+        return {
+            "status": "fallback",
+            "model": self.model_name,
+            "latency_ms": int((time.perf_counter() - start) * 1000),
+            "message": "Gemini models currently unreachable; deterministic SOC heuristic engine active.",
+        }
 
     async def investigate_incident(
         self,
         incident_data: Dict[str, Any],
         events: List[Dict[str, Any]],
         predictions: List[Dict[str, Any]],
-    ) -> InvestigationResult:
+    ) -> Any:
         """Analyze an incident and return an evidence-grounded investigation report."""
+        from ai.grounding import extract_evidence, format_timeline
+        from ai.prompts.investigation import INVESTIGATION_SYSTEM_PROMPT, INVESTIGATION_USER_TEMPLATE
+        from ai.schemas import InvestigationResult
+
         evidence = extract_evidence(events, predictions)
         timeline_str = format_timeline(events)
 
@@ -56,66 +143,85 @@ class GeminiInvestigationEngine:
             events_sample=timeline_str,
         )
 
-        # Fallback if no API key is configured
-        if not self.model:
-            logger.warning("No GEMINI_API_KEY provided. Using deterministic fallback investigation.")
+        if not self._client:
             return self._build_fallback_investigation(incident_data, evidence)
 
-        try:
-            response = await self.model.generate_content_async(
-                user_prompt,
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json",
-                    temperature=0.2,  # Low temperature for strict determinism
-                ),
-            )
-            data = json.loads(response.text)
-            return InvestigationResult(**data)
-        except Exception as e:
-            logger.error(f"Gemini API invocation failed: {e}. Falling back to rule-based summary.")
-            return self._build_fallback_investigation(incident_data, evidence)
+        # Attempt invocation using modern client
+        if self.client_type == "google.genai":
+            for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
+                try:
+                    full_prompt = f"{INVESTIGATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
+                    response = await asyncio.to_thread(
+                        self._client.models.generate_content,
+                        model=model_to_use,
+                        contents=full_prompt,
+                    )
+                    clean_text = response.text.strip()
+                    if clean_text.startswith("```json"):
+                        clean_text = clean_text[7:]
+                    if clean_text.startswith("```"):
+                        clean_text = clean_text[3:]
+                    if clean_text.endswith("```"):
+                        clean_text = clean_text[:-3]
+                    data = json.loads(clean_text.strip())
+                    return InvestigationResult(**data)
+                except Exception as e:
+                    logger.warning(f"Generation with {model_to_use} encountered: {e}")
+                    continue
+
+        return self._build_fallback_investigation(incident_data, evidence)
 
     async def generate_remediation(
         self,
         incident_data: Dict[str, Any],
-        investigation: InvestigationResult,
-    ) -> RemediationResult:
+        investigation: Any,
+    ) -> Any:
         """Generate targeted remediation recommendations."""
-        if not self.model:
+        from ai.prompts.remediation import REMEDIATION_SYSTEM_PROMPT, REMEDIATION_USER_TEMPLATE
+        from ai.schemas import RemediationResult
+
+        if not self._client:
             return self._build_fallback_remediation(incident_data)
 
         user_prompt = REMEDIATION_USER_TEMPLATE.format(
             title=incident_data.get("title", "Incident"),
             severity=incident_data.get("severity", "medium"),
             risk_score=incident_data.get("risk_score", 50.0),
-            assessment=investigation.assessment,
+            assessment=getattr(investigation, "assessment", ""),
             assets=", ".join(incident_data.get("assets", [])) or "Host systems",
         )
 
-        try:
-            rem_model = genai.GenerativeModel(
-                model_name=self.model_name,
-                system_instruction=REMEDIATION_SYSTEM_PROMPT,
-            )
-            response = await rem_model.generate_content_async(
-                user_prompt,
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json",
-                    temperature=0.2,
-                ),
-            )
-            data = json.loads(response.text)
-            return RemediationResult(**data)
-        except Exception as e:
-            logger.error(f"Gemini remediation failed: {e}")
-            return self._build_fallback_remediation(incident_data)
+        if self.client_type == "google.genai":
+            for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
+                try:
+                    full_prompt = f"{REMEDIATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
+                    response = await asyncio.to_thread(
+                        self._client.models.generate_content,
+                        model=model_to_use,
+                        contents=full_prompt,
+                    )
+                    clean_text = response.text.strip()
+                    if clean_text.startswith("```json"):
+                        clean_text = clean_text[7:]
+                    if clean_text.startswith("```"):
+                        clean_text = clean_text[3:]
+                    if clean_text.endswith("```"):
+                        clean_text = clean_text[:-3]
+                    data = json.loads(clean_text.strip())
+                    return RemediationResult(**data)
+                except Exception as e:
+                    logger.warning(f"Remediation with {model_to_use} failed: {e}")
+                    continue
+
+        return self._build_fallback_remediation(incident_data)
 
     def _build_fallback_investigation(
         self,
         incident_data: Dict[str, Any],
         evidence: Dict[str, Any],
-    ) -> InvestigationResult:
-        """Deterministic grounded output when LLM is unavailable."""
+    ) -> Any:
+        from ai.schemas import InvestigationResult
+
         title = incident_data.get("title", "Suspicious Activity")
         srcs = evidence.get("source_ips", ["Unknown IP"])
         dsts = evidence.get("target_ips", ["Internal Target"])
@@ -134,7 +240,7 @@ class GeminiInvestigationEngine:
                 f"ML model consensus: {evidence.get('model_predictions', 'Anomalous')}.",
             ],
             risk_factors=[
-                f"Elevated event frequency exceeding standard baseline.",
+                "Elevated event frequency exceeding baseline.",
                 f"Model anomaly score: {evidence.get('anomaly_score', '0.0')}.",
             ],
             uncertainty=(
@@ -151,7 +257,7 @@ class GeminiInvestigationEngine:
                     "action": f"Apply temporary block rule on perimeter firewall for IP(s): {', '.join(srcs)}",
                     "priority": "urgent" if incident_data.get("risk_score", 0) > 75 else "high",
                     "rationale": "Mitigate ongoing connection attempts while investigation concludes.",
-                    "estimated_impact": "Blocks incoming traffic from identified source address without interrupting internal operations.",
+                    "estimated_impact": "Blocks incoming traffic from identified source address.",
                 },
                 {
                     "action": "Enforce mandatory credential rotation and session invalidation for targeted accounts.",
@@ -162,7 +268,8 @@ class GeminiInvestigationEngine:
             ],
         )
 
-    def _build_fallback_remediation(self, incident_data: Dict[str, Any]) -> RemediationResult:
+    def _build_fallback_remediation(self, incident_data: Dict[str, Any]) -> Any:
+        from ai.schemas import RemediationResult
         return RemediationResult(
             overall_assessment="Immediate defensive isolation and account review recommended.",
             actions=[
@@ -180,4 +287,3 @@ class GeminiInvestigationEngine:
                 },
             ],
         )
-
