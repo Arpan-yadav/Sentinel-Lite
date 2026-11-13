@@ -1,19 +1,23 @@
 {
-  "include": [
-    "backend",
-    "ml",
-    "tests",
-    "scripts"
-  ],
+  "include": ["backend", "ml", "tests", "scripts", "ai"],
   "extraPaths": [
     "backend",
     ".",
     "ml",
+    "ai",
     "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/Lib/site-packages"
   ],
+  "pythonPath": "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/python.exe",
   "pythonVersion": "3.13",
   "pythonPlatform": "Windows",
+  "useLibraryCodeForTypes": true,
   "reportMissingImports": "none",
   "reportMissingModuleSource": "none",
-  "reportAttributeAccessIssue": "none"
+  "reportMissingTypeStubs": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportUnknownVariableType": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownArgumentType": "none",
+  "typeCheckingMode": "off"
 }

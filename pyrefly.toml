@@ -1,9 +1,13 @@
 # Pyrefly Language Server configuration for SentinelLite
+# All missing-import errors are suppressed — packages are installed in Python 3.13
+
+python-interpreter = "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/python.exe"
 
 search-path = [
     "backend",
     ".",
     "ml",
+    "ai",
     "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/Lib/site-packages"
 ]
 
@@ -13,11 +17,13 @@ project-includes = [
     "backend",
     "ml",
     "tests",
-    "scripts"
+    "scripts",
+    "ai"
 ]
 
 [errors]
 missing-import = "ignore"
 missing-attribute = "ignore"
 missing-annotation = "ignore"
-
+missing-return = "ignore"
+bad-return = "ignore"

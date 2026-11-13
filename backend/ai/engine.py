@@ -7,17 +7,17 @@ import json
 import logging
 import re
 import time
+import warnings
 from typing import Any, Dict, List, Optional
+
+# Suppress non-critical SDK warnings
+warnings.filterwarnings("ignore", message="Direct use of automatic function calling")
+warnings.filterwarnings("ignore", category=FutureWarning, module="google")
 
 try:
     from google import genai
 except Exception:
     genai = None  # type: ignore
-
-try:
-    import google.generativeai as legacy_genai
-except Exception:
-    legacy_genai = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -51,23 +51,13 @@ class GeminiInvestigationEngine:
         self.client_type: Optional[str] = None
         self._client: Any = None
 
-        if self.api_key:
-            if genai is not None:
-                try:
-                    self._client = genai.Client(api_key=self.api_key)
-                    self.client_type = "google.genai"
-                    logger.info(f"Initialized Gemini engine with google.genai ({self.model_name})")
-                except Exception as e:
-                    logger.warning(f"Could not initialize google.genai: {e}")
-
-            if not self._client and legacy_genai is not None:
-                try:
-                    legacy_genai.configure(api_key=self.api_key)
-                    self._client = legacy_genai.GenerativeModel(model_name=self.model_name)
-                    self.client_type = "google.generativeai"
-                except Exception as ex:
-                    logger.error(f"Failed to initialize legacy Gemini client: {ex}")
-                    self._client = None
+        if self.api_key and genai is not None:
+            try:
+                self._client = genai.Client(api_key=self.api_key)
+                self.client_type = "google.genai"
+                logger.info(f"Initialized Gemini engine with google.genai ({self.model_name})")
+            except Exception as e:
+                logger.warning(f"Could not initialize google.genai: {e}")
 
     async def test_connection(self) -> Dict[str, Any]:
         """Test API key validity, measure latency, and detect active model."""
@@ -100,24 +90,6 @@ class GeminiInvestigationEngine:
                         "status": "connected",
                         "model": candidate,
                         "sdk": "google.genai",
-                        "latency_ms": elapsed,
-                        "message": f"Successfully authenticated with Google Gemini ({candidate})",
-                    }
-                except Exception as e:
-                    logger.debug(f"Candidate {candidate} failed: {e}")
-                    continue
-
-        elif self.client_type == "google.generativeai" and legacy_genai is not None:
-            for candidate in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
-                try:
-                    m = legacy_genai.GenerativeModel(candidate)
-                    res = m.generate_content("Respond with 'OK'")
-                    elapsed = int((time.perf_counter() - start) * 1000)
-                    self.model_name = candidate
-                    return {
-                        "status": "connected",
-                        "model": candidate,
-                        "sdk": "google.generativeai",
                         "latency_ms": elapsed,
                         "message": f"Successfully authenticated with Google Gemini ({candidate})",
                     }
