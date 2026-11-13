@@ -8,6 +8,7 @@ import {
   Lock,
   RefreshCw,
   Shield,
+  Unlock,
   Zap,
 } from "lucide-react";
 
@@ -66,6 +67,7 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
   const [loading, setLoading] = useState(true);
   const [activePlaybookTab, setActivePlaybookTab] = useState<string>("iptables");
   const [containing, setContaining] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const [containSuccess, setContainSuccess] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -96,6 +98,20 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
       setContainSuccess("Containment signal dispatched to perimeter firewall boundary.");
     } finally {
       setContaining(false);
+    }
+  };
+
+  const handleRevokeContainment = async () => {
+    if (!tkg?.chokepoint?.attacker_ip) return;
+    try {
+      setRevoking(true);
+      await api.delete(`/defense/unblock/${tkg.chokepoint.attacker_ip}`);
+      setContainSuccess(null);
+      await fetchTkg();
+    } catch (err) {
+      console.error("Failed to revoke containment:", err);
+    } finally {
+      setRevoking(false);
     }
   };
 
@@ -153,12 +169,23 @@ export function IncidentTKGGraph({ incidentId }: { incidentId: string }) {
       </div>
 
       {containSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>{containSuccess}</span>
           </div>
-          <span className="text-[10px] uppercase font-bold text-emerald-400/80">Active Block Rule Synced</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase font-bold text-emerald-400/80">Active Block Rule Synced</span>
+            <button
+              onClick={handleRevokeContainment}
+              disabled={revoking}
+              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-400 hover:text-rose-300 font-bold text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              title="Deactivate and remove block rule from perimeter boundary"
+            >
+              <Unlock className="h-3 w-3" />
+              {revoking ? "Revoking..." : "Inactivate / Unblock"}
+            </button>
+          </div>
         </div>
       )}
 
