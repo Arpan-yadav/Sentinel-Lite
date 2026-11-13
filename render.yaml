@@ -5,11 +5,12 @@ services:
   - type: web
     name: sentinellite-api
     runtime: python
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    region: oregon
     plan: free
     autoDeploy: true
     healthCheckPath: /health
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -18,17 +19,20 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: "https://*.vercel.app,http://localhost:3000,http://localhost:8000"
+        value: "https://*.vercel.app,http://localhost:3000"
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "480"
       - key: GEMINI_API_KEY
         sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.0"
 
 databases:
   # ==========================================
-  # 2. Managed PostgreSQL Instance
+  # 2. Managed PostgreSQL Instance (Free Tier)
   # ==========================================
   - name: sentinellite-db
     databaseName: sentinellite
     user: sentinellite
     plan: free
+    region: oregon
