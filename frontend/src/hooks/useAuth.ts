@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { api } from "@/lib/api";
 import { User } from "@/types";
 
 export function useAuth() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +50,7 @@ export function useAuth() {
   const logout = () => {
     Cookies.remove("sentinel_token");
     setUser(null);
-    window.location.href = "/login";
+    router.push("/login");
   };
 
   return {
