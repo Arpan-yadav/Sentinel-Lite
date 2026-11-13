@@ -8,10 +8,16 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.engine import GeminiInvestigationEngine
-from app.core.config import settings
-from app.core.database import get_db
-from app.core.security import get_current_user, get_password_hash, require_admin
-from app.models.user import User, UserRole
+try:
+    from app.core.config import settings  # type: ignore
+    from app.core.database import get_db  # type: ignore
+    from app.core.security import get_current_user, get_password_hash, require_admin  # type: ignore
+    from app.models.user import User, UserRole  # type: ignore
+except ImportError:
+    from backend.app.core.config import settings  # type: ignore
+    from backend.app.core.database import get_db  # type: ignore
+    from backend.app.core.security import get_current_user, get_password_hash, require_admin  # type: ignore
+    from backend.app.models.user import User, UserRole  # type: ignore
 
 router = APIRouter(prefix="/v1/admin", tags=["Admin Operations"])
 

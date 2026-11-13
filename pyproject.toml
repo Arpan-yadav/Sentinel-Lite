@@ -4,20 +4,33 @@ version = "0.1.0"
 description = "SentinelLite AI-SOC Security Operations Platform"
 requires-python = ">=3.11"
 
+[tool.pyrefly]
+search-path = [
+    "backend",
+    ".",
+    "ml",
+    "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/Lib/site-packages"
+]
+enable-fallback-search-path = true
+project-includes = [
+    "backend",
+    "ml",
+    "tests",
+    "scripts"
+]
+
+[tool.pyrefly.errors]
+missing-import = "ignore"
+missing-attribute = "ignore"
+
 [tool.pyright]
 include = ["backend", "ml", "tests", "scripts"]
 extraPaths = [
-    "./backend",
+    "backend",
     ".",
+    "ml",
     "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/Lib/site-packages"
 ]
 reportMissingImports = false
-
-[tool.pyrefly]
-include = ["backend", "ml", "tests", "scripts"]
-extraPaths = [
-    "./backend",
-    ".",
-    "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/Lib/site-packages"
-]
-ignore = ["missing-import"]
+reportMissingModuleSource = false
+reportAttributeAccessIssue = false

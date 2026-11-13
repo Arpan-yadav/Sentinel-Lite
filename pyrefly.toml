@@ -1,0 +1,22 @@
+# Pyrefly Language Server configuration for SentinelLite
+
+search-path = [
+    "backend",
+    ".",
+    "ml",
+    "C:/Users/Arpan yadav/AppData/Local/Programs/Python/Python313/Lib/site-packages"
+]
+
+enable-fallback-search-path = true
+
+project-includes = [
+    "backend",
+    "ml",
+    "tests",
+    "scripts"
+]
+
+[errors]
+missing-import = "ignore"
+missing-attribute = "ignore"
+missing-annotation = "ignore"

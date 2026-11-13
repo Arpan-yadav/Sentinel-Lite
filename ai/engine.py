@@ -34,8 +34,8 @@ class GeminiInvestigationEngine:
     def __init__(self, api_key: str = "", model_name: str = "gemini-3.5-flash"):
         self.api_key = api_key.strip()
         self.model_name = model_name
-        self.client_type = None
-        self._client = None
+        self.client_type: Optional[str] = None
+        self._client: Any = None
 
         if self.api_key:
             if genai is not None:
@@ -68,11 +68,12 @@ class GeminiInvestigationEngine:
         start = time.perf_counter()
         active_model = self.model_name
 
-        if self.client_type == "google.genai":
+        if self.client_type == "google.genai" and self._client is not None:
+            active_client: Any = self._client
             for candidate in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
                 try:
                     res = await asyncio.to_thread(
-                        self._client.models.generate_content,
+                        active_client.models.generate_content,
                         model=candidate,
                         contents="Respond with 'OK'",
                     )
@@ -147,12 +148,13 @@ class GeminiInvestigationEngine:
             return self._build_fallback_investigation(incident_data, evidence)
 
         # Attempt invocation using modern client
-        if self.client_type == "google.genai":
+        if self.client_type == "google.genai" and self._client is not None:
+            active_client: Any = self._client
             for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
                 try:
                     full_prompt = f"{INVESTIGATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
                     response = await asyncio.to_thread(
-                        self._client.models.generate_content,
+                        active_client.models.generate_content,
                         model=model_to_use,
                         contents=full_prompt,
                     )
@@ -191,12 +193,13 @@ class GeminiInvestigationEngine:
             assets=", ".join(incident_data.get("assets", [])) or "Host systems",
         )
 
-        if self.client_type == "google.genai":
+        if self.client_type == "google.genai" and self._client is not None:
+            active_client: Any = self._client
             for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
                 try:
                     full_prompt = f"{REMEDIATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
                     response = await asyncio.to_thread(
-                        self._client.models.generate_content,
+                        active_client.models.generate_content,
                         model=model_to_use,
                         contents=full_prompt,
                     )
