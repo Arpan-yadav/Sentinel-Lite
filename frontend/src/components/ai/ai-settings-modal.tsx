@@ -357,3 +357,4 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
     </div>
   );
 }
+
