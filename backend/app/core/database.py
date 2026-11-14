@@ -7,7 +7,13 @@ from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
 
 # Use the configured DATABASE_URL; fall back to SQLite for local dev if postgres isn't reachable
-_db_url = settings.DATABASE_URL
+_db_url = settings.DATABASE_URL.strip()
+
+# Normalize PostgreSQL URL for async SQLAlchemy (Render injects postgres:// or postgresql://)
+if _db_url.startswith("postgres://"):
+    _db_url = _db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif _db_url.startswith("postgresql://") and not _db_url.startswith("postgresql+"):
+    _db_url = _db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 # If the URL looks like postgres+asyncpg but no asyncpg env override, check for a SQLite override
 _sqlite_override = os.environ.get("SQLITE_OVERRIDE", "")
