@@ -13,8 +13,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Database,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import { RetentionModal } from "@/components/events/retention-modal";
 
@@ -27,6 +27,8 @@ export default function EventsPage() {
   const [protocolFilter, setProtocolFilter] = useState("");
   const [page, setPage] = useState(1);
   const [retentionModalOpen, setRetentionModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deletingBatch, setDeletingBatch] = useState(false);
 
   const pageSize = 50;
 
@@ -51,6 +53,91 @@ export default function EventsPage() {
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === events.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(events.map((e) => e.id)));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Are you sure you want to permanently delete ${selectedIds.size} selected event record(s)?`)) return;
+
+    try {
+      setDeletingBatch(true);
+      const res = await api.post("/events/batch-delete", {
+        event_ids: Array.from(selectedIds),
+      });
+      setUploadMsg({
+        type: "success",
+        text: `Deleted ${res.data.deleted_count} selected event records.`,
+      });
+      setSelectedIds(new Set());
+      await fetchEvents();
+    } catch {
+      setUploadMsg({
+        type: "error",
+        text: "Failed to delete selected events.",
+      });
+    } finally {
+      setDeletingBatch(false);
+    }
+  };
+
+  const handleDeleteSingle = async (id: string) => {
+    try {
+      await api.delete(`/events/${id}`);
+      setUploadMsg({
+        type: "success",
+        text: "Event deleted successfully.",
+      });
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      await fetchEvents();
+    } catch {
+      setUploadMsg({
+        type: "error",
+        text: "Failed to delete event.",
+      });
+    }
+  };
+
+  const handleDeleteAllEvents = async () => {
+    if (!confirm("Are you sure you want to delete ALL security event telemetry and reset the database?")) return;
+
+    try {
+      setDeletingBatch(true);
+      const res = await api.delete("/events/all");
+      setUploadMsg({
+        type: "success",
+        text: `Database Reset: Deleted all ${res.data.deleted_count} security events.`,
+      });
+      setSelectedIds(new Set());
+      await fetchEvents();
+    } catch {
+      setUploadMsg({
+        type: "error",
+        text: "Failed to delete all events.",
+      });
+    } finally {
+      setDeletingBatch(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,15 +168,23 @@ export default function EventsPage() {
     }
   };
 
-  const handleSeedAuthentic = async () => {
+  const handleSeedAuthentic = async (reset = false) => {
     try {
       setUploading(true);
       setUploadMsg(null);
-      const res = await api.post("/events/seed-authentic");
-      setUploadMsg({
-        type: "success",
-        text: `Authentic Ingestion Complete: Successfully loaded ${res.data.events_ingested.toLocaleString()} benchmark telemetry events and generated ${res.data.incidents_created} correlated incidents!`,
-      });
+      const res = await api.post(`/events/seed-authentic${reset ? "?reset=true" : ""}`);
+      if (res.data.status === "already_loaded") {
+        setUploadMsg({
+          type: "success",
+          text: res.data.message || "Benchmark dataset (12,500 events) is already loaded. Duplicates prevented.",
+        });
+      } else {
+        setUploadMsg({
+          type: "success",
+          text: `Benchmark Loaded: Ingested ${res.data.events_ingested.toLocaleString()} authentic events and correlated ${res.data.incidents_created} incidents!`,
+        });
+      }
+      setSelectedIds(new Set());
       await fetchEvents();
     } catch {
       setUploadMsg({
@@ -146,22 +241,31 @@ export default function EventsPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setRetentionModalOpen(true)}
-            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-red-500/30 hover:border-red-500 text-red-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
-            title="Manage 7-day log retention, benign purge, and verified deletion"
+            onClick={() => handleSeedAuthentic(true)}
+            disabled={uploading}
+            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            title="Clean reset: restores exactly 12,500 pristine benchmark events with zero duplicates"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Retention & Delete
+            <RotateCcw className={`h-3.5 w-3.5 ${uploading ? "animate-spin" : ""}`} />
+            {uploading ? "Resetting..." : "⚡ Reset 12.5k Baseline"}
           </button>
 
           <button
-            onClick={handleSeedAuthentic}
-            disabled={uploading}
-            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-            title="Append another batch of 12,500 authentic CICIDS2017 events to simulate live streaming telemetry"
+            onClick={handleDeleteAllEvents}
+            disabled={deletingBatch}
+            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-red-500/30 hover:border-red-500 text-red-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            title="Purge all security event records and telemetry from database"
           >
-            <Database className={`h-3.5 w-3.5 ${uploading ? "animate-spin" : ""}`} />
-            {uploading ? "Ingesting..." : "⚡ Ingest +12.5k Events"}
+            <Trash2 className="h-3.5 w-3.5" />
+            Purge All
+          </button>
+
+          <button
+            onClick={() => setRetentionModalOpen(true)}
+            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-(--border) hover:border-(--foreground-muted) text-(--foreground) font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+            title="Manage 7-day log retention, benign purge, and verified deletion"
+          >
+            Retention Policy
           </button>
 
           <button
@@ -253,36 +357,85 @@ export default function EventsPage() {
         </div>
       </div>
 
+      {/* Selected Records Action Banner */}
+      {selectedIds.size > 0 && (
+        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-between text-xs font-mono animate-in fade-in duration-150">
+          <div className="flex items-center gap-2 text-red-400 font-bold">
+            <Trash2 className="h-4 w-4" />
+            <span>{selectedIds.size} record(s) selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="px-3 py-1.5 rounded-lg border border-(--border) text-(--foreground-muted) hover:text-(--foreground) text-xs cursor-pointer"
+            >
+              Clear Selection
+            </button>
+            <button
+              onClick={handleDeleteSelected}
+              disabled={deletingBatch}
+              className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {deletingBatch ? "Deleting..." : `Delete Selected (${selectedIds.size})`}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Events Table */}
       <div className="rounded-2xl border border-(--border) bg-(--background-card) overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
             <thead className="bg-(--background-muted) border-b border-(--border) text-(--foreground-muted) uppercase">
               <tr>
+                <th className="px-4 py-3.5 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={events.length > 0 && selectedIds.size === events.length}
+                    onChange={toggleSelectAll}
+                    className="accent-emerald-500 rounded cursor-pointer"
+                    title="Select all on this page"
+                  />
+                </th>
                 <th className="px-5 py-3.5 font-semibold">Event Timestamp</th>
                 <th className="px-5 py-3.5 font-semibold">Source Vector</th>
                 <th className="px-5 py-3.5 font-semibold">Target Destination</th>
                 <th className="px-5 py-3.5 font-semibold">Proto / Port</th>
                 <th className="px-5 py-3.5 font-semibold">Event Classification</th>
+                <th className="px-4 py-3.5 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-(--border) text-(--foreground)">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-10 text-center text-(--foreground-muted)">
+                  <td colSpan={7} className="p-10 text-center text-(--foreground-muted)">
                     Loading raw security event stream...
                   </td>
                 </tr>
               ) : events.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-(--foreground-muted)">
+                  <td colSpan={7} className="p-12 text-center text-(--foreground-muted)">
                     <Activity className="h-8 w-8 mx-auto mb-2 text-(--foreground-muted) opacity-50" />
                     No security events found. Ingest logs using the upload button above.
                   </td>
                 </tr>
               ) : (
                 events.map((ev) => (
-                  <tr key={ev.id} className="hover:bg-(--background-muted)/50 transition-colors">
+                  <tr
+                    key={ev.id}
+                    className={`hover:bg-(--background-muted)/50 transition-colors ${
+                      selectedIds.has(ev.id) ? "bg-red-500/5" : ""
+                    }`}
+                  >
+                    <td className="px-4 py-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(ev.id)}
+                        onChange={() => toggleSelectOne(ev.id)}
+                        className="accent-emerald-500 rounded cursor-pointer"
+                      />
+                    </td>
                     <td className="px-5 py-3 text-(--foreground-muted) whitespace-nowrap">
                       {formatDateTime(ev.timestamp)}
                     </td>
@@ -305,6 +458,15 @@ export default function EventsPage() {
                       <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
                         {ev.event_type}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => handleDeleteSingle(ev.id)}
+                        className="p-1 rounded-md text-(--foreground-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        title="Delete single event record"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </td>
                   </tr>
                 ))

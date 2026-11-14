@@ -24,7 +24,10 @@ def _find_dataset_path(dataset_name: str = "benchmark") -> Optional[Path]:
     filename = "cicids2017_benchmark.csv" if dataset_name == "benchmark" else "sentinellite_authentic_events.csv"
     candidates = [
         Path(f"data/authentic/{filename}"),
+        Path(f"backend/data/authentic/{filename}"),
         Path(f"../data/authentic/{filename}"),
+        Path(__file__).resolve().parent.parent.parent.parent / "data" / "authentic" / filename,
+        Path(__file__).resolve().parent.parent.parent / "data" / "authentic" / filename,
         Path(__file__).resolve().parents[4] / "data" / "authentic" / filename,
         Path(__file__).resolve().parents[3] / "data" / "authentic" / filename,
     ]

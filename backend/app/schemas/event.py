@@ -50,3 +50,8 @@ class SecurityEventFilter(BaseModel):
     @property
     def per_page(self) -> int:
         return self.page_size
+
+
+class BatchDeleteEventsRequest(BaseModel):
+    """Schema for batch deleting events."""
+    event_ids: list[UUID]

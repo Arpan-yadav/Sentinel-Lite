@@ -9,7 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
-from app.schemas.event import SecurityEventCreate, SecurityEventFilter, SecurityEventResponse
+from app.schemas.event import (
+    BatchDeleteEventsRequest,
+    SecurityEventCreate,
+    SecurityEventFilter,
+    SecurityEventResponse,
+)
 from app.services.event_service import EventService
 
 router = APIRouter(prefix="/v1/events", tags=["Events"])
@@ -68,10 +73,26 @@ async def seed_authentic_events(
         await db.execute(delete(ModelPrediction))
         await db.execute(delete(SecurityEvent))
         await db.commit()
+    else:
+        # Check if benchmark is already seeded to prevent duplicate accumulation
+        from sqlalchemy import func, select
+        count_stmt = select(func.count(SecurityEvent.id))
+        existing_count = (await db.execute(count_stmt)).scalar_one()
+
+        if existing_count >= 12500:
+            return {
+                "status": "already_loaded",
+                "events_ingested": 0,
+                "total_existing": existing_count,
+                "message": f"Authentic benchmark (12,500 records) is already loaded. Duplicates prevented to keep data pristine.",
+            }
 
     csv_candidates = [
         Path("data/authentic/sentinellite_authentic_events.csv"),
+        Path("backend/data/authentic/sentinellite_authentic_events.csv"),
         Path("../data/authentic/sentinellite_authentic_events.csv"),
+        Path(__file__).resolve().parent.parent.parent.parent / "data" / "authentic" / "sentinellite_authentic_events.csv",
+        Path(__file__).resolve().parent.parent.parent / "data" / "authentic" / "sentinellite_authentic_events.csv",
         Path(__file__).resolve().parents[4] / "data" / "authentic" / "sentinellite_authentic_events.csv",
         Path(__file__).resolve().parents[3] / "data" / "authentic" / "sentinellite_authentic_events.csv",
     ]
@@ -166,6 +187,36 @@ async def list_events(
     return items
 
 
+@router.post("/batch-delete")
+@router.delete("/batch")
+async def delete_events_batch(
+    payload: BatchDeleteEventsRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Delete selected security event records by their IDs."""
+    deleted = await EventService.delete_events_batch(db, payload.event_ids)
+    return {
+        "status": "success",
+        "deleted_count": deleted,
+        "message": f"Successfully deleted {deleted} selected security events.",
+    }
+
+
+@router.delete("/all")
+async def delete_all_events(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Delete all security event records, alerts, and incidents."""
+    deleted = await EventService.delete_all_events(db)
+    return {
+        "status": "success",
+        "deleted_count": deleted,
+        "message": f"Successfully deleted all {deleted} security events and reset the database.",
+    }
+
+
 @router.post("/", response_model=SecurityEventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(
     event_in: SecurityEventCreate,
@@ -192,4 +243,20 @@ async def get_event(
             detail="Security event not found",
         )
     return event
+
+
+@router.delete("/{id}")
+async def delete_single_event(
+    id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Delete a single security event by ID."""
+    deleted = await EventService.delete_events_batch(db, [id])
+    if deleted == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Security event not found",
+        )
+    return {"status": "success", "message": "Event deleted successfully"}
 

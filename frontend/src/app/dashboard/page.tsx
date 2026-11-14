@@ -91,14 +91,21 @@ export default function DashboardPage() {
       setSeeding(true);
       setDetectionMsg(null);
       const res = await api.post(`/events/seed-authentic${reset ? "?reset=true" : ""}`);
-      const ingested = res.data.events_ingested ?? 0;
-      const incs = res.data.incidents_created ?? 0;
-      setDetectionMsg({
-        type: "success",
-        text: reset
-          ? `Baseline Reset Complete: Database restored to ${ingested.toLocaleString()} authentic benchmark events and ${incs} correlated incidents.`
-          : `Streaming Ingestion: Ingested +${ingested.toLocaleString()} events and updated correlated incident clusters!`,
-      });
+      if (res.data.status === "already_loaded") {
+        setDetectionMsg({
+          type: "success",
+          text: res.data.message || "Benchmark dataset (12,500 events) is already loaded. Duplicates prevented.",
+        });
+      } else {
+        const ingested = res.data.events_ingested ?? 0;
+        const incs = res.data.incidents_created ?? 0;
+        setDetectionMsg({
+          type: "success",
+          text: reset
+            ? `Baseline Reset Complete: Database restored to ${ingested.toLocaleString()} authentic benchmark events and ${incs} correlated incidents.`
+            : `Benchmark Loaded: Ingested ${ingested.toLocaleString()} authentic events and correlated ${incs} active security incidents!`,
+        });
+      }
       await fetchData();
     } catch {
       setDetectionMsg({

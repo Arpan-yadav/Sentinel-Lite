@@ -330,3 +330,48 @@ class EventService:
             "policy_rule": "Routine benign logs older than 7 days are automatically purged. Critical & suspicious security logs are permanently preserved until verified and manually authorized.",
         }
 
+    @staticmethod
+    async def delete_events_batch(db: AsyncSession, event_ids: List[uuid.UUID]) -> int:
+        """Safely delete selected events along with cascading alerts."""
+        if not event_ids:
+            return 0
+
+        from sqlalchemy import delete
+        from app.models.alert import Alert
+        from app.models.incident_event import IncidentEvent
+        from app.models.model_prediction import ModelPrediction
+
+        alert_ids_q = select(Alert.id).where(Alert.event_id.in_(event_ids))
+        alert_ids = list((await db.execute(alert_ids_q)).scalars().all())
+
+        if alert_ids:
+            await db.execute(delete(IncidentEvent).where(IncidentEvent.alert_id.in_(alert_ids)))
+            await db.execute(delete(ModelPrediction).where(ModelPrediction.alert_id.in_(alert_ids)))
+            await db.execute(delete(Alert).where(Alert.id.in_(alert_ids)))
+
+        del_stmt = delete(SecurityEvent).where(SecurityEvent.id.in_(event_ids))
+        res = await db.execute(del_stmt)
+        await db.commit()
+        return res.rowcount
+
+    @staticmethod
+    async def delete_all_events(db: AsyncSession) -> int:
+        """Delete all security events, alerts, and correlated incidents."""
+        from sqlalchemy import delete
+        from app.models.alert import Alert
+        from app.models.incident import Incident
+        from app.models.incident_event import IncidentEvent
+        from app.models.investigation import Investigation
+        from app.models.model_prediction import ModelPrediction
+        from app.models.recommendation import Recommendation
+
+        await db.execute(delete(IncidentEvent))
+        await db.execute(delete(Investigation))
+        await db.execute(delete(Recommendation))
+        await db.execute(delete(Incident))
+        await db.execute(delete(ModelPrediction))
+        await db.execute(delete(Alert))
+        res = await db.execute(delete(SecurityEvent))
+        await db.commit()
+        return res.rowcount
+
