@@ -19,7 +19,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: "https://*.vercel.app,http://localhost:3000"
+        value: "https://sentinel-lite-bice.vercel.app,http://localhost:3000"
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "480"
       - key: GEMINI_API_KEY
