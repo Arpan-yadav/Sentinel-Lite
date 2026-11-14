@@ -28,7 +28,9 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Download,
+  Sparkles,
 } from "lucide-react";
+import { DatasetLabModal } from "@/components/analytics/dataset-lab-modal";
 import { TelemetrySample } from "@/types";
 
 const ATTACK_COLORS: Record<string, string> = {
@@ -47,6 +49,7 @@ export default function AnalyticsPage() {
   const [selectedDataset, setSelectedDataset] = useState<string>("benchmark");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [datasetMetrics, setDatasetMetrics] = useState<any>(null);
+  const [datasetLabOpen, setDatasetLabOpen] = useState(false);
   const [selectedChartType, setSelectedChartType] = useState<"bar" | "time" | "scatter" | "radar" | "density">("bar");
   const [selectedAttackType, setSelectedAttackType] = useState<string>("ALL");
   const [selectedProtocol, setSelectedProtocol] = useState<string>("ALL");
@@ -216,6 +219,13 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setDatasetLabOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-mono font-bold transition-all cursor-pointer shadow-xs"
+            title="Upload new dataset to compare performance vs baseline and compute merged metrics"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Compare New Dataset (Lab)
+          </button>
           <button
             onClick={exportCSV}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-(--background-card) hover:bg-(--background-muted) border border-(--border) text-xs font-mono font-bold text-(--foreground) transition-all cursor-pointer shadow-xs"
@@ -628,6 +638,12 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      <DatasetLabModal
+        isOpen={datasetLabOpen}
+        onClose={() => setDatasetLabOpen(false)}
+        onDatasetEvaluated={fetchAnalytics}
+      />
     </div>
   );
 }
