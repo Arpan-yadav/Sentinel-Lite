@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { Client, AnalystUser, AiStatus } from "@/types";
+import { AISettingsModal } from "@/components/ai/ai-settings-modal";
 import {
   Building2,
   Users,
@@ -14,11 +15,13 @@ import {
   Zap,
   Globe,
   Lock,
+  SlidersHorizontal,
 } from "lucide-react";
 
 export default function AdminPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"clients" | "analysts" | "ai">("clients");
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   // Clients state
   const [clients, setClients] = useState<Client[]>([]);
@@ -550,14 +553,25 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <button
-                onClick={checkAiStatus}
-                disabled={testingAi}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-(--background-muted) hover:bg-(--background) border border-(--border) text-xs font-mono font-bold text-(--foreground) transition-all cursor-pointer"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${testingAi ? "animate-spin" : ""}`} />
-                Test API Key Connection
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAiModalOpen(true)}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-mono font-bold transition-all shadow-xs cursor-pointer"
+                  title="Configure personal API key (Gemini, Claude, GPT)"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Change Engine & API Key
+                </button>
+                <button
+                  onClick={checkAiStatus}
+                  disabled={testingAi}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-(--background-muted) hover:bg-(--background) border border-(--border) text-xs font-mono font-bold text-(--foreground) transition-all cursor-pointer"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${testingAi ? "animate-spin" : ""}`} />
+                  Test Active Key
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
@@ -607,6 +621,9 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* AI Reasoning Settings Modal */}
+      <AISettingsModal isOpen={aiModalOpen} onClose={() => { setAiModalOpen(false); checkAiStatus(); }} />
     </div>
   );
 }

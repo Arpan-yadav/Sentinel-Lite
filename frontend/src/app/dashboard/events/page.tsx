@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Database,
 } from "lucide-react";
 
 export default function EventsPage() {
@@ -77,6 +78,26 @@ export default function EventsPage() {
     }
   };
 
+  const handleSeedAuthentic = async () => {
+    try {
+      setUploading(true);
+      setUploadMsg(null);
+      const res = await api.post("/events/seed-authentic");
+      setUploadMsg({
+        type: "success",
+        text: `Authentic Ingestion Complete: Successfully loaded ${res.data.events_ingested.toLocaleString()} benchmark telemetry events and generated ${res.data.incidents_created} correlated incidents!`,
+      });
+      await fetchEvents();
+    } catch {
+      setUploadMsg({
+        type: "error",
+        text: "Could not seed authentic benchmark dataset. Please verify backend status.",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleExportCSV = () => {
     if (events.length === 0) return;
     const headers = ["ID", "Timestamp", "Source IP", "Dest IP", "Source Port", "Dest Port", "Protocol", "Event Type"];
@@ -121,6 +142,16 @@ export default function EventsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleSeedAuthentic}
+            disabled={uploading}
+            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            title="Seed authentic CICIDS2017 benchmark dataset"
+          >
+            <Database className={`h-3.5 w-3.5 ${uploading ? "animate-spin" : ""}`} />
+            {uploading ? "Ingesting..." : "⚡ Ingest Benchmark"}
+          </button>
+
           <button
             onClick={handleExportCSV}
             disabled={events.length === 0}

@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  Database,
   Play,
   RefreshCw,
   ShieldAlert,
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [severityData, setSeverityData] = useState<{ name: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [detecting, setDetecting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [detectionMsg, setDetectionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
@@ -77,6 +79,28 @@ export default function DashboardPage() {
       });
     } finally {
       setDetecting(false);
+    }
+  };
+
+  const handleSeedAuthentic = async () => {
+    try {
+      setSeeding(true);
+      setDetectionMsg(null);
+      const res = await api.post("/events/seed-authentic");
+      const ingested = res.data.events_ingested ?? 0;
+      const incs = res.data.incidents_created ?? 0;
+      setDetectionMsg({
+        type: "success",
+        text: `Authentic Ingestion Complete: Successfully loaded ${ingested.toLocaleString()} benchmark telemetry events and correlated ${incs} active security incidents!`,
+      });
+      await fetchData();
+    } catch {
+      setDetectionMsg({
+        type: "error",
+        text: "Could not trigger benchmark seeding. Please verify backend connectivity.",
+      });
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -135,6 +159,16 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleSeedAuthentic}
+            disabled={seeding}
+            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            title="Seed authentic CICIDS2017 benchmark dataset & correlate incidents"
+          >
+            <Database className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
+            {seeding ? "Seeding..." : "⚡ Seed Authentic Data"}
+          </button>
+
           <button
             onClick={fetchData}
             disabled={loading}
@@ -265,8 +299,16 @@ export default function DashboardPage() {
                 Loading live incident telemetry...
               </div>
             ) : incidents.length === 0 ? (
-              <div className="p-12 text-center text-(--foreground-muted) font-mono text-xs border border-dashed border-(--border) rounded-xl">
-                No incidents yet. Ingest telemetry logs in Events or click &ldquo;Run ML Detection&rdquo;.
+              <div className="p-8 text-center text-(--foreground-muted) font-mono text-xs border border-dashed border-(--border) rounded-xl space-y-3">
+                <p>No incidents detected in the active database.</p>
+                <button
+                  onClick={handleSeedAuthentic}
+                  disabled={seeding}
+                  className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs inline-flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+                >
+                  <Database className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
+                  {seeding ? "Ingesting Benchmark Telemetry..." : "⚡ Ingest Authentic Benchmark (12.5k Events)"}
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

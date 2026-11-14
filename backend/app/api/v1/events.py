@@ -40,6 +40,54 @@ async def upload_csv_events(
     }
 
 
+@router.post("/seed-authentic", status_code=status.HTTP_200_OK)
+async def seed_authentic_events(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Ingest authentic benchmark security events and auto-correlate incidents on demand."""
+    from pathlib import Path
+    from app.services.detection_service import DetectionService
+    from app.services.incident_service import IncidentService
+
+    csv_candidates = [
+        Path("data/authentic/sentinellite_authentic_events.csv"),
+        Path("../data/authentic/sentinellite_authentic_events.csv"),
+        Path(__file__).resolve().parents[4] / "data" / "authentic" / "sentinellite_authentic_events.csv",
+        Path(__file__).resolve().parents[3] / "data" / "authentic" / "sentinellite_authentic_events.csv",
+    ]
+    target_csv = None
+    for c in csv_candidates:
+        if c.exists():
+            target_csv = c
+            break
+
+    if not target_csv:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Benchmark CSV dataset not found on server",
+        )
+
+    with open(target_csv, "rb") as f:
+        content = f.read()
+
+    inserted, skipped = await EventService.ingest_csv(db, content)
+    await db.commit()
+
+    # Run ML detection & correlation
+    det_summary = await DetectionService.run_detection(db, limit=2000)
+    incidents_created = await IncidentService.correlate_alerts_into_incidents(db)
+
+    return {
+        "status": "success",
+        "events_ingested": inserted,
+        "rows_skipped": skipped,
+        "detection_summary": det_summary,
+        "incidents_created": incidents_created,
+        "message": f"Successfully loaded {inserted} events and generated {incidents_created} incidents.",
+    }
+
+
 @router.get("/", response_model=List[SecurityEventResponse])
 async def list_events(
     source_ip: Optional[str] = None,
