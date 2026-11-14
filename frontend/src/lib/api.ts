@@ -15,6 +15,18 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Attach per-user custom AI provider configuration if present in localStorage
+  if (typeof window !== "undefined") {
+    const customProvider = localStorage.getItem("sentinellite_ai_provider");
+    const customKey = localStorage.getItem("sentinellite_ai_key");
+    const customModel = localStorage.getItem("sentinellite_ai_model");
+
+    if (customProvider) config.headers["X-AI-Provider"] = customProvider;
+    if (customKey) config.headers["X-AI-Key"] = customKey;
+    if (customModel) config.headers["X-AI-Model"] = customModel;
+  }
+
   return config;
 });
 

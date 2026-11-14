@@ -7,6 +7,7 @@ import { Incident, IncidentStatus, Investigation, Recommendation } from "@/types
 import { formatDateTime, getSeverityColor } from "@/lib/utils";
 import { IncidentTimeline } from "@/components/incidents/timeline";
 import { IncidentTKGGraph } from "@/components/incidents/tkg-graph";
+import { AISettingsModal, AIProvider } from "@/components/ai/ai-settings-modal";
 import {
   AlertCircle,
   AlertTriangle,
@@ -20,6 +21,8 @@ import {
   Loader2,
   Network,
   Play,
+  SlidersHorizontal,
+  Sparkles,
   XCircle,
 } from "lucide-react";
 
@@ -38,6 +41,23 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [copied, setCopied] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<AIProvider>("gemini");
+  const [hasCustomKey, setHasCustomKey] = useState(false);
+
+  useEffect(() => {
+    const syncAi = () => {
+      if (typeof window !== "undefined") {
+        const p = (localStorage.getItem("sentinellite_ai_provider") as AIProvider) || "gemini";
+        const k = localStorage.getItem("sentinellite_ai_key");
+        setActiveProvider(p);
+        setHasCustomKey(Boolean(k && k.trim()));
+      }
+    };
+    syncAi();
+    window.addEventListener("sentinellite:ai-updated", syncAi);
+    return () => window.removeEventListener("sentinellite:ai-updated", syncAi);
+  }, []);
 
   const fetchIncidentDetails = useCallback(async () => {
     try {
@@ -281,9 +301,30 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
               <div>
                 <h3 className="text-sm font-bold text-(--foreground)">No AI Investigation Report Generated Yet</h3>
                 <p className="text-xs text-(--foreground-muted) mt-1 max-w-md mx-auto">
-                  Trigger the Gemini LLM Reasoning Engine to analyze telemetry evidence, identify MITRE ATT&CK techniques, and generate remediation proposals.
+                  Trigger multi-provider LLM reasoning (Gemini, Claude, or GPT) to analyze telemetry evidence, identify MITRE ATT&CK techniques, and generate remediation proposals.
                 </p>
               </div>
+
+              {/* Engine selector badge */}
+              <div className="flex items-center justify-center gap-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--background-muted) border border-(--border) text-xs">
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+                  <span className="font-mono text-(--foreground)">
+                    Engine: <strong className="uppercase">{activeProvider}</strong>
+                  </span>
+                  <span className="text-[10px] font-mono text-(--foreground-muted)">
+                    ({hasCustomKey ? "User API Key" : "Server Default"})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAiModalOpen(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-mono text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/30 transition-colors cursor-pointer"
+                >
+                  <SlidersHorizontal className="h-3 w-3" /> Change AI
+                </button>
+              </div>
+
               {errorMsg && (
                 <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2 max-w-lg mx-auto text-left">
                   <AlertCircle className="h-4 w-4 shrink-0" />
@@ -298,12 +339,12 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
                 {generating ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Synthesizing with Gemini AI...</span>
+                    <span className="capitalize">Synthesizing with {activeProvider} AI...</span>
                   </>
                 ) : (
                   <>
                     <Play className="h-3.5 w-3.5 fill-current" />
-                    <span>Generate AI Investigation</span>
+                    <span className="capitalize">Generate {activeProvider} AI Investigation</span>
                   </>
                 )}
               </button>
@@ -433,6 +474,9 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           )}
         </div>
       )}
+
+      {/* AI Reasoning Settings Modal */}
+      <AISettingsModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
     </div>
   );
 }

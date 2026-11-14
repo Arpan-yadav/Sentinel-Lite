@@ -112,3 +112,60 @@ def test_telemetry_samples_generator():
     assert "anomaly_score" in s0
     assert "packet_length_mean" in s0
     assert "severity" in s0
+
+
+@pytest.mark.asyncio
+async def test_multi_provider_ai_engine():
+    """Verify SOCAIEngine initializes with Gemini, OpenAI, and Claude, and produces valid reports."""
+    from ai.engine import SOCAIEngine, GeminiInvestigationEngine
+
+    # Verify alias
+    assert GeminiInvestigationEngine is SOCAIEngine
+
+    # Test initialization with various providers
+    gemini_eng = SOCAIEngine(provider="gemini", api_key="", model_name="gemini-3.5-flash-lite")
+    assert gemini_eng.provider == "gemini"
+
+    openai_eng = SOCAIEngine(provider="openai", api_key="test-key", model_name="gpt-4o-mini")
+    assert openai_eng.provider == "openai"
+    assert openai_eng.model_name == "gpt-4o-mini"
+
+    claude_eng = SOCAIEngine(provider="claude", api_key="test-key", model_name="claude-3-5-haiku-20241022")
+    assert claude_eng.provider == "claude"
+
+    # Test unconfigured test_connection
+    res = await gemini_eng.test_connection()
+    assert res["status"] in ["unconfigured", "fallback"]
+
+    # Test fallback investigation generation
+    incident_data = {
+        "title": "Brute Force SSH Attack",
+        "severity": "critical",
+        "risk_score": 92.0,
+        "alert_count": 10,
+    }
+    events = [
+        {
+            "source_ip": "185.220.101.5",
+            "dest_ip": "10.0.0.15",
+            "source_port": 54321,
+            "dest_port": 22,
+            "protocol": "TCP",
+            "event_type": "ssh_brute",
+            "timestamp": "2026-11-14T00:00:00Z",
+        }
+    ]
+    predictions = [{"model_name": "XGBoost", "prediction": "SSH-Bruteforce", "confidence": 0.98, "anomaly_score": 0.85}]
+
+    investigation = await gemini_eng.investigate_incident(incident_data, events, predictions)
+    assert investigation.confidence_level in ["low", "medium", "high"]
+    assert len(investigation.recommended_actions) >= 1
+
+
+def test_keep_alive_configuration():
+    """Verify Keep-Alive parameters prevent Render spin-down."""
+    assert hasattr(settings, "KEEP_ALIVE_ENABLED")
+    assert settings.KEEP_ALIVE_ENABLED is True
+    assert hasattr(settings, "KEEP_ALIVE_INTERVAL_SECONDS")
+    assert settings.KEEP_ALIVE_INTERVAL_SECONDS <= 900  # Must be less than 15-minute Render limit
+

@@ -1,0 +1,28 @@
+name: Render Backend Keep-Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes (Render spins down free tier after 15 minutes of inactivity)
+    - cron: "*/14 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-keepalive:
+    name: Ping Render Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping SentinelLite API Health Endpoint
+        run: |
+          TARGET_URL="${{ secrets.RENDER_BACKEND_URL }}"
+          if [ -z "$TARGET_URL" ]; then
+            TARGET_URL="https://sentinellite-api.onrender.com"
+          fi
+          echo "Sending keepalive heartbeat to: $TARGET_URL/health"
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$TARGET_URL/health" || echo "000")
+          echo "HTTP response status: $STATUS_CODE"
+          if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 400 ]; then
+            echo "Render backend is awake and healthy."
+          else
+            echo "Ping attempted. Backend will warm up if sleeping."
+          fi

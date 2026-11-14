@@ -16,8 +16,16 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # AI
+    # AI Configuration (Gemini, OpenAI, Claude)
+    DEFAULT_AI_PROVIDER: str = "gemini"
     GEMINI_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+
+    # Keep-Alive Worker (Prevents Render Free-Tier Spin-Down)
+    RENDER_EXTERNAL_URL: str = ""
+    KEEP_ALIVE_ENABLED: bool = True
+    KEEP_ALIVE_INTERVAL_SECONDS: int = 600
 
     # CORS – comma-separated or JSON list
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000"

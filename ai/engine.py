@@ -1,4 +1,4 @@
-"""Gemini-powered AI investigation and remediation engine for SentinelLite."""
+"""Multi-provider AI investigation and remediation engine for SentinelLite (Gemini, OpenAI, Claude)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ import re
 import time
 import warnings
 from typing import Any, Dict, List, Optional
+
+import httpx
 
 # Suppress non-critical SDK warnings
 warnings.filterwarnings("ignore", message="Direct use of automatic function calling")
@@ -21,12 +23,27 @@ except Exception:
 
 logger = logging.getLogger(__name__)
 
-# List of models to try in priority order (ultra-fast lite first, fallback to standard)
-CANDIDATE_MODELS = [
-    "gemini-3.5-flash-lite",
-    "gemini-3.5-flash",
-    "gemini-flash-latest",
-]
+# Default model candidates per provider
+PROVIDER_CANDIDATE_MODELS = {
+    "gemini": [
+        "gemini-3.5-flash-lite",
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+    ],
+    "openai": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-4-turbo",
+    ],
+    "claude": [
+        "claude-3-5-haiku-20241022",
+        "claude-3-5-sonnet-20241022",
+        "claude-3-haiku-20240307",
+    ],
+}
+
+# Legacy alias for backward compatibility
+CANDIDATE_MODELS = PROVIDER_CANDIDATE_MODELS["gemini"]
 
 
 def _extract_json(text: str) -> Dict[str, Any]:
@@ -42,67 +59,310 @@ def _extract_json(text: str) -> Dict[str, Any]:
     return json.loads(text)
 
 
-class GeminiInvestigationEngine:
-    """Orchestrates LLM-based investigation workflows using Google Gemini API."""
+class SOCAIEngine:
+    """Orchestrates LLM-based investigation workflows supporting Gemini, OpenAI, and Claude."""
 
-    def __init__(self, api_key: str = "", model_name: str = "gemini-3.5-flash-lite"):
+    def __init__(
+        self,
+        api_key: str = "",
+        model_name: str = "",
+        provider: str = "gemini",
+    ):
+        norm_provider = (provider or "gemini").lower().strip()
+        if norm_provider in ["anthropic", "claude"]:
+            self.provider = "claude"
+        elif norm_provider in ["openai", "gpt"]:
+            self.provider = "openai"
+        else:
+            self.provider = "gemini"
+
         self.api_key = api_key.strip()
-        self.model_name = model_name
-        self.client_type: Optional[str] = None
-        self._client: Any = None
 
-        if self.api_key and genai is not None:
-            try:
-                self._client = genai.Client(api_key=self.api_key)
-                self.client_type = "google.genai"
-                logger.info(f"Initialized Gemini engine with google.genai ({self.model_name})")
-            except Exception as e:
-                logger.warning(f"Could not initialize google.genai: {e}")
+        # Set default model for the selected provider if not specified
+        if model_name and model_name.strip():
+            self.model_name = model_name.strip()
+        else:
+            self.model_name = PROVIDER_CANDIDATE_MODELS[self.provider][0]
+
+        self.client_type: Optional[str] = None
+        self._gemini_client: Any = None
+
+        if self.api_key:
+            if self.provider == "gemini" and genai is not None:
+                try:
+                    self._gemini_client = genai.Client(api_key=self.api_key)
+                    self.client_type = "google.genai"
+                    logger.info(f"Initialized Gemini engine with google.genai ({self.model_name})")
+                except Exception as e:
+                    logger.warning(f"Could not initialize google.genai: {e}")
+            elif self.provider in ["openai", "claude"]:
+                self.client_type = f"httpx.{self.provider}"
+                logger.info(f"Initialized {self.provider.upper()} engine ({self.model_name})")
 
     async def test_connection(self) -> Dict[str, Any]:
-        """Test API key validity, measure latency, and detect active model."""
+        """Test API key validity, measure latency, and detect active model across providers."""
         if not self.api_key:
             return {
                 "status": "unconfigured",
-                "message": "No GEMINI_API_KEY set in environment",
-                "model": "None",
+                "provider": self.provider,
+                "message": f"No {self.provider.upper()} API key configured.",
+                "model": self.model_name or "None",
                 "latency_ms": 0,
             }
 
         start = time.perf_counter()
-        active_model = self.model_name
 
-        if self.client_type == "google.genai" and self._client is not None:
-            active_client: Any = self._client
-            for candidate in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
-                try:
-                    res = await asyncio.wait_for(
-                        asyncio.to_thread(
-                            active_client.models.generate_content,
-                            model=candidate,
-                            contents="Respond with 'OK'",
-                        ),
-                        timeout=8.0,
-                    )
-                    elapsed = int((time.perf_counter() - start) * 1000)
-                    self.model_name = candidate
-                    return {
-                        "status": "connected",
-                        "model": candidate,
-                        "sdk": "google.genai",
-                        "latency_ms": elapsed,
-                        "message": f"Successfully authenticated with Google Gemini ({candidate})",
-                    }
-                except Exception as e:
-                    logger.debug(f"Candidate {candidate} failed: {e}")
-                    continue
+        # 1. Test Gemini
+        if self.provider == "gemini":
+            if self.client_type == "google.genai" and self._gemini_client is not None:
+                active_client: Any = self._gemini_client
+                candidates = [self.model_name] + [
+                    m for m in PROVIDER_CANDIDATE_MODELS["gemini"] if m != self.model_name
+                ]
+                for candidate in candidates:
+                    try:
+                        await asyncio.wait_for(
+                            asyncio.to_thread(
+                                active_client.models.generate_content,
+                                model=candidate,
+                                contents="Respond with 'OK'",
+                            ),
+                            timeout=8.0,
+                        )
+                        elapsed = int((time.perf_counter() - start) * 1000)
+                        self.model_name = candidate
+                        return {
+                            "status": "connected",
+                            "provider": "gemini",
+                            "model": candidate,
+                            "sdk": "google.genai",
+                            "latency_ms": elapsed,
+                            "message": f"Successfully authenticated with Google Gemini ({candidate})",
+                        }
+                    except Exception as e:
+                        logger.debug(f"Candidate {candidate} failed: {e}")
+                        continue
+
+            return {
+                "status": "fallback",
+                "provider": "gemini",
+                "model": self.model_name,
+                "latency_ms": int((time.perf_counter() - start) * 1000),
+                "message": "Gemini models currently unreachable; deterministic SOC heuristic engine active.",
+            }
+
+        # 2. Test OpenAI
+        elif self.provider == "openai":
+            try:
+                candidates = [self.model_name] + [
+                    m for m in PROVIDER_CANDIDATE_MODELS["openai"] if m != self.model_name
+                ]
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    for candidate in candidates:
+                        try:
+                            resp = await client.post(
+                                "https://api.openai.com/v1/chat/completions",
+                                headers={
+                                    "Authorization": f"Bearer {self.api_key}",
+                                    "Content-Type": "application/json",
+                                },
+                                json={
+                                    "model": candidate,
+                                    "messages": [{"role": "user", "content": "Respond with OK"}],
+                                    "max_tokens": 5,
+                                },
+                            )
+                            if resp.status_code == 200:
+                                elapsed = int((time.perf_counter() - start) * 1000)
+                                self.model_name = candidate
+                                return {
+                                    "status": "connected",
+                                    "provider": "openai",
+                                    "model": candidate,
+                                    "sdk": "openai-rest",
+                                    "latency_ms": elapsed,
+                                    "message": f"Successfully authenticated with OpenAI ({candidate})",
+                                }
+                            elif resp.status_code in [401, 403]:
+                                err_data = resp.json().get("error", {}).get("message", "Invalid API key")
+                                return {
+                                    "status": "error",
+                                    "provider": "openai",
+                                    "model": candidate,
+                                    "latency_ms": int((time.perf_counter() - start) * 1000),
+                                    "message": f"OpenAI Authentication Failed: {err_data}",
+                                }
+                        except Exception:
+                            continue
+            except Exception as exc:
+                logger.warning(f"OpenAI test failed: {exc}")
+
+            return {
+                "status": "fallback",
+                "provider": "openai",
+                "model": self.model_name,
+                "latency_ms": int((time.perf_counter() - start) * 1000),
+                "message": "OpenAI endpoint currently unreachable; deterministic SOC heuristic engine active.",
+            }
+
+        # 3. Test Anthropic Claude
+        elif self.provider == "claude":
+            try:
+                candidates = [self.model_name] + [
+                    m for m in PROVIDER_CANDIDATE_MODELS["claude"] if m != self.model_name
+                ]
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    for candidate in candidates:
+                        try:
+                            resp = await client.post(
+                                "https://api.anthropic.com/v1/messages",
+                                headers={
+                                    "x-api-key": self.api_key,
+                                    "anthropic-version": "2023-06-01",
+                                    "content-type": "application/json",
+                                },
+                                json={
+                                    "model": candidate,
+                                    "max_tokens": 5,
+                                    "messages": [{"role": "user", "content": "Respond with OK"}],
+                                },
+                            )
+                            if resp.status_code == 200:
+                                elapsed = int((time.perf_counter() - start) * 1000)
+                                self.model_name = candidate
+                                return {
+                                    "status": "connected",
+                                    "provider": "claude",
+                                    "model": candidate,
+                                    "sdk": "anthropic-rest",
+                                    "latency_ms": elapsed,
+                                    "message": f"Successfully authenticated with Anthropic Claude ({candidate})",
+                                }
+                            elif resp.status_code in [401, 403]:
+                                err_msg = resp.json().get("error", {}).get("message", "Invalid Anthropic API key")
+                                return {
+                                    "status": "error",
+                                    "provider": "claude",
+                                    "model": candidate,
+                                    "latency_ms": int((time.perf_counter() - start) * 1000),
+                                    "message": f"Anthropic Authentication Failed: {err_msg}",
+                                }
+                        except Exception:
+                            continue
+            except Exception as exc:
+                logger.warning(f"Claude test failed: {exc}")
+
+            return {
+                "status": "fallback",
+                "provider": "claude",
+                "model": self.model_name,
+                "latency_ms": int((time.perf_counter() - start) * 1000),
+                "message": "Claude endpoint currently unreachable; deterministic SOC heuristic engine active.",
+            }
 
         return {
             "status": "fallback",
+            "provider": self.provider,
             "model": self.model_name,
             "latency_ms": int((time.perf_counter() - start) * 1000),
-            "message": "Gemini models currently unreachable; deterministic SOC heuristic engine active.",
+            "message": "Deterministic SOC heuristic engine active.",
         }
+
+    async def _call_llm(self, system_prompt: str, user_prompt: str) -> Optional[str]:
+        """Call active provider and return raw text output."""
+        if not self.api_key:
+            return None
+
+        # Gemini
+        if self.provider == "gemini" and self._gemini_client is not None:
+            active_client: Any = self._gemini_client
+            for model_to_use in [self.model_name] + [
+                m for m in PROVIDER_CANDIDATE_MODELS["gemini"] if m != self.model_name
+            ]:
+                try:
+                    full_prompt = f"{system_prompt}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
+                    response = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            active_client.models.generate_content,
+                            model=model_to_use,
+                            contents=full_prompt,
+                        ),
+                        timeout=12.0,
+                    )
+                    if response and response.text:
+                        return response.text
+                except Exception as e:
+                    logger.warning(f"Generation with Gemini {model_to_use} encountered: {e}")
+                    continue
+
+        # OpenAI
+        elif self.provider == "openai":
+            for model_to_use in [self.model_name] + [
+                m for m in PROVIDER_CANDIDATE_MODELS["openai"] if m != self.model_name
+            ]:
+                try:
+                    async with httpx.AsyncClient(timeout=14.0) as client:
+                        resp = await client.post(
+                            "https://api.openai.com/v1/chat/completions",
+                            headers={
+                                "Authorization": f"Bearer {self.api_key}",
+                                "Content-Type": "application/json",
+                            },
+                            json={
+                                "model": model_to_use,
+                                "messages": [
+                                    {"role": "system", "content": f"{system_prompt}\nTask: Output strict JSON."},
+                                    {"role": "user", "content": user_prompt},
+                                ],
+                                "response_format": {"type": "json_object"},
+                                "temperature": 0.2,
+                            },
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            return data["choices"][0]["message"]["content"]
+                        else:
+                            logger.warning(f"OpenAI error HTTP {resp.status_code}: {resp.text}")
+                except Exception as e:
+                    logger.warning(f"Generation with OpenAI {model_to_use} failed: {e}")
+                    continue
+
+        # Claude
+        elif self.provider == "claude":
+            for model_to_use in [self.model_name] + [
+                m for m in PROVIDER_CANDIDATE_MODELS["claude"] if m != self.model_name
+            ]:
+                try:
+                    async with httpx.AsyncClient(timeout=14.0) as client:
+                        resp = await client.post(
+                            "https://api.anthropic.com/v1/messages",
+                            headers={
+                                "x-api-key": self.api_key,
+                                "anthropic-version": "2023-06-01",
+                                "content-type": "application/json",
+                            },
+                            json={
+                                "model": model_to_use,
+                                "max_tokens": 2048,
+                                "system": f"{system_prompt}\nTask: Output strict valid JSON matching requested fields.",
+                                "messages": [
+                                    {"role": "user", "content": user_prompt},
+                                ],
+                                "temperature": 0.2,
+                            },
+                        )
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            content_blocks = data.get("content", [])
+                            if content_blocks and "text" in content_blocks[0]:
+                                return content_blocks[0]["text"]
+                        else:
+                            logger.warning(f"Claude error HTTP {resp.status_code}: {resp.text}")
+                except Exception as e:
+                    logger.warning(f"Generation with Claude {model_to_use} failed: {e}")
+                    continue
+
+        return None
 
     async def investigate_incident(
         self,
@@ -133,28 +393,13 @@ class GeminiInvestigationEngine:
             events_sample=timeline_str,
         )
 
-        if not self._client:
-            return self._build_fallback_investigation(incident_data, evidence)
-
-        # Attempt invocation using modern client
-        if self.client_type == "google.genai" and self._client is not None:
-            active_client: Any = self._client
-            for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
-                try:
-                    full_prompt = f"{INVESTIGATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
-                    response = await asyncio.wait_for(
-                        asyncio.to_thread(
-                            active_client.models.generate_content,
-                            model=model_to_use,
-                            contents=full_prompt,
-                        ),
-                        timeout=12.0,
-                    )
-                    data = _extract_json(response.text)
-                    return InvestigationResult(**data)
-                except Exception as e:
-                    logger.warning(f"Generation with {model_to_use} encountered: {e}")
-                    continue
+        raw_output = await self._call_llm(INVESTIGATION_SYSTEM_PROMPT, user_prompt)
+        if raw_output:
+            try:
+                data = _extract_json(raw_output)
+                return InvestigationResult(**data)
+            except Exception as e:
+                logger.warning(f"Failed to parse LLM investigation JSON: {e}")
 
         return self._build_fallback_investigation(incident_data, evidence)
 
@@ -167,9 +412,6 @@ class GeminiInvestigationEngine:
         from ai.prompts.remediation import REMEDIATION_SYSTEM_PROMPT, REMEDIATION_USER_TEMPLATE
         from ai.schemas import RemediationResult
 
-        if not self._client:
-            return self._build_fallback_remediation(incident_data)
-
         user_prompt = REMEDIATION_USER_TEMPLATE.format(
             title=incident_data.get("title", "Incident"),
             severity=incident_data.get("severity", "medium"),
@@ -178,24 +420,13 @@ class GeminiInvestigationEngine:
             assets=", ".join(incident_data.get("assets", [])) or "Host systems",
         )
 
-        if self.client_type == "google.genai" and self._client is not None:
-            active_client: Any = self._client
-            for model_to_use in [self.model_name] + [m for m in CANDIDATE_MODELS if m != self.model_name]:
-                try:
-                    full_prompt = f"{REMEDIATION_SYSTEM_PROMPT}\n\nTask: Output strict JSON matching schema.\n\n{user_prompt}"
-                    response = await asyncio.wait_for(
-                        asyncio.to_thread(
-                            active_client.models.generate_content,
-                            model=model_to_use,
-                            contents=full_prompt,
-                        ),
-                        timeout=12.0,
-                    )
-                    data = _extract_json(response.text)
-                    return RemediationResult(**data)
-                except Exception as e:
-                    logger.warning(f"Remediation with {model_to_use} failed: {e}")
-                    continue
+        raw_output = await self._call_llm(REMEDIATION_SYSTEM_PROMPT, user_prompt)
+        if raw_output:
+            try:
+                data = _extract_json(raw_output)
+                return RemediationResult(**data)
+            except Exception as e:
+                logger.warning(f"Failed to parse LLM remediation JSON: {e}")
 
         return self._build_fallback_remediation(incident_data)
 
@@ -271,3 +502,7 @@ class GeminiInvestigationEngine:
                 },
             ],
         )
+
+
+# Backward-compatibility alias
+GeminiInvestigationEngine = SOCAIEngine

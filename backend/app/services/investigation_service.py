@@ -23,18 +23,44 @@ logger = logging.getLogger(__name__)
 class InvestigationService:
     """Manages AI investigations and human-in-the-loop recommendations."""
 
-    @staticmethod
-    def _get_engine() -> GeminiInvestigationEngine:
-        return GeminiInvestigationEngine(api_key=settings.GEMINI_API_KEY)
+    @classmethod
+    def get_engine(
+        cls,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
+        model_name: Optional[str] = None,
+    ) -> GeminiInvestigationEngine:
+        """Resolve AI engine supporting Gemini, OpenAI, and Claude with custom user keys."""
+        prov = (provider or settings.DEFAULT_AI_PROVIDER or "gemini").lower().strip()
+        key = api_key.strip() if (api_key and api_key.strip()) else ""
+
+        # Fall back to server environment variables if no user-supplied key
+        if not key:
+            if prov in ["gemini", "google"]:
+                key = settings.GEMINI_API_KEY
+            elif prov in ["openai", "gpt"]:
+                key = settings.OPENAI_API_KEY
+            elif prov in ["claude", "anthropic"]:
+                key = settings.ANTHROPIC_API_KEY
+
+        return GeminiInvestigationEngine(api_key=key, model_name=model_name or "", provider=prov)
+
+    @classmethod
+    def _get_engine(cls) -> GeminiInvestigationEngine:
+        """Default server engine resolver for legacy callers."""
+        return cls.get_engine()
 
     @classmethod
     async def generate_investigation(
         cls,
         db: AsyncSession,
         incident: Incident,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
+        model_name: Optional[str] = None,
     ) -> Investigation:
-        """Collect incident telemetry, invoke Gemini AI, and persist Investigation and Recommendations."""
-        engine = cls._get_engine()
+        """Collect incident telemetry, invoke chosen AI engine, and persist Investigation and Recommendations."""
+        engine = cls.get_engine(provider=provider, api_key=api_key, model_name=model_name)
 
         # Collect event telemetry
         events = []

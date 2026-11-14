@@ -23,6 +23,21 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [aiProviderLabel, setAiProviderLabel] = useState("Gemini 3.5");
+
+  useEffect(() => {
+    const syncProvider = () => {
+      if (typeof window !== "undefined") {
+        const p = localStorage.getItem("sentinellite_ai_provider") || "gemini";
+        if (p === "openai") setAiProviderLabel("GPT-4o");
+        else if (p === "claude") setAiProviderLabel("Claude 3.5");
+        else setAiProviderLabel("Gemini 3.5");
+      }
+    };
+    syncProvider();
+    window.addEventListener("sentinellite:ai-updated", syncProvider);
+    return () => window.removeEventListener("sentinellite:ai-updated", syncProvider);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -169,7 +184,7 @@ export function Sidebar() {
             <Cpu className="h-3.5 w-3.5 text-emerald-500" />
           </div>
           <div className="text-[11px] text-(--foreground-muted) mt-1.5 font-mono">
-            Gemini 3.5 + XGBoost 99.8%
+            {aiProviderLabel} + XGBoost 99.8%
           </div>
         </div>
       </div>

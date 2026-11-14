@@ -24,6 +24,14 @@ services:
         value: "480"
       - key: GEMINI_API_KEY
         sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: KEEP_ALIVE_ENABLED
+        value: "true"
+      - key: KEEP_ALIVE_INTERVAL_SECONDS
+        value: "600"
       - key: PYTHON_VERSION
         value: "3.11.0"
 
