@@ -53,26 +53,12 @@ async def seed_authentic_events(
 ) -> Any:
     """Ingest authentic benchmark security events and auto-correlate incidents on demand."""
     from pathlib import Path
-    from sqlalchemy import delete
     from app.services.detection_service import DetectionService
     from app.services.incident_service import IncidentService
-    from app.models.incident_event import IncidentEvent
-    from app.models.investigation import Investigation
-    from app.models.recommendation import Recommendation
-    from app.models.incident import Incident
-    from app.models.alert import Alert
-    from app.models.model_prediction import ModelPrediction
     from app.models.security_event import SecurityEvent
 
     if reset:
-        await db.execute(delete(IncidentEvent))
-        await db.execute(delete(Investigation))
-        await db.execute(delete(Recommendation))
-        await db.execute(delete(Incident))
-        await db.execute(delete(Alert))
-        await db.execute(delete(ModelPrediction))
-        await db.execute(delete(SecurityEvent))
-        await db.commit()
+        await EventService.delete_all_events(db)
     else:
         # Check if benchmark is already seeded to prevent duplicate accumulation
         from sqlalchemy import func, select
