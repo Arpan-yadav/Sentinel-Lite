@@ -114,8 +114,8 @@ async def seed_authentic_events(
     inserted, skipped = await EventService.ingest_csv(db, content)
     await db.commit()
 
-    # Run ML detection & correlation
-    det_summary = await DetectionService.run_detection(db, limit=2000)
+    # Run ML detection & correlation on representative sample
+    det_summary = await DetectionService.run_detection(db, limit=300)
     incidents_created = await IncidentService.correlate_alerts_into_incidents(db)
 
     return {

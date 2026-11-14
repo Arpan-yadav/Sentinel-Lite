@@ -102,22 +102,29 @@ class EventService:
                 else:
                     ts = datetime.now(timezone.utc)
 
-                event = SecurityEvent(
-                    timestamp=ts,
-                    source_ip=src_ip,
-                    dest_ip=dst_ip,
-                    source_port=src_port,
-                    dest_port=dst_port,
-                    protocol=protocol,
-                    event_type=event_type,
-                    raw_data=row,
-                )
-                events_to_create.append(event)
+                event_data = {
+                    "id": uuid.uuid4(),
+                    "timestamp": ts,
+                    "source_ip": src_ip,
+                    "dest_ip": dst_ip,
+                    "source_port": src_port,
+                    "dest_port": dst_port,
+                    "protocol": protocol,
+                    "event_type": event_type,
+                    "raw_data": row,
+                    "asset_id": None,
+                    "created_at": datetime.now(timezone.utc),
+                }
+                events_to_create.append(event_data)
             except Exception:
                 skipped += 1
 
         if events_to_create:
-            db.add_all(events_to_create)
+            from sqlalchemy import insert
+            chunk_size = 1000
+            for i in range(0, len(events_to_create), chunk_size):
+                chunk = events_to_create[i:i + chunk_size]
+                await db.execute(insert(SecurityEvent), chunk)
             await db.flush()
 
         return len(events_to_create), skipped
