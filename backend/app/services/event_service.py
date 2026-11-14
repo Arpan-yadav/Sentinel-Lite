@@ -161,3 +161,172 @@ class EventService:
         result = await db.execute(select(SecurityEvent).where(SecurityEvent.id == event_id))
         return result.scalar_one_or_none()
 
+    @staticmethod
+    def get_critical_event_ids_subquery():
+        """Subquery returning IDs of all critical and suspicious security events."""
+        from sqlalchemy import union
+        from app.models.alert import Alert, Severity
+        from app.models.incident_event import IncidentEvent
+
+        # 1. Events associated with critical or high severity alerts
+        crit_alerts = select(Alert.event_id).where(
+            Alert.severity.in_([Severity.critical, Severity.high])
+        )
+
+        # 2. Events attached to correlated incidents
+        inc_alerts = (
+            select(Alert.event_id)
+            .join(IncidentEvent, IncidentEvent.alert_id == Alert.id)
+        )
+
+        # 3. Events with attack or malicious event types
+        attack_types = select(SecurityEvent.id.label("event_id")).where(
+            SecurityEvent.event_type.in_([
+                "syn_probe",
+                "sql_injection_attempt",
+                "ssh_login_failure",
+                "http_flood",
+                "malicious",
+            ])
+        )
+
+        return union(crit_alerts, inc_alerts, attack_types).subquery()
+
+    @staticmethod
+    async def run_retention_cleanup(
+        db: AsyncSession,
+        retention_days: int = 7,
+    ) -> Dict[str, Any]:
+        """Automatically delete benign ('good') logs older than retention_days.
+
+        Strictly preserves all critical and suspicious logs.
+        """
+        from datetime import timedelta
+        from sqlalchemy import delete
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        crit_sub = EventService.get_critical_event_ids_subquery()
+
+        # Count preserved critical events
+        crit_count_q = select(func.count(SecurityEvent.id)).where(
+            SecurityEvent.id.in_(select(crit_sub.c.event_id))
+        )
+        critical_preserved = (await db.execute(crit_count_q)).scalar_one()
+
+        # Delete benign events older than cutoff
+        del_stmt = delete(SecurityEvent).where(
+            SecurityEvent.timestamp < cutoff,
+            SecurityEvent.id.not_in(select(crit_sub.c.event_id)),
+        )
+        res = await db.execute(del_stmt)
+        deleted_count = res.rowcount
+        await db.commit()
+
+        return {
+            "status": "success",
+            "retention_days": retention_days,
+            "cutoff_timestamp": cutoff.isoformat(),
+            "benign_events_deleted": deleted_count,
+            "critical_events_preserved": critical_preserved,
+            "message": f"Successfully purged {deleted_count} benign logs older than {retention_days} days. Preserved {critical_preserved} critical/suspicious logs.",
+        }
+
+    @staticmethod
+    async def purge_telemetry(
+        db: AsyncSession,
+        target: str = "benign",
+        confirmation_phrase: str = "",
+    ) -> Dict[str, Any]:
+        """Purge telemetry events based on policy and verification safeguards."""
+        from sqlalchemy import delete
+        from app.models.incident_event import IncidentEvent
+        from app.models.investigation import Investigation
+        from app.models.recommendation import Recommendation
+        from app.models.incident import Incident
+        from app.models.alert import Alert
+        from app.models.model_prediction import ModelPrediction
+
+        crit_sub = EventService.get_critical_event_ids_subquery()
+
+        if target == "benign":
+            # Purge ALL benign events regardless of age, preserving critical ones
+            del_stmt = delete(SecurityEvent).where(
+                SecurityEvent.id.not_in(select(crit_sub.c.event_id))
+            )
+            res = await db.execute(del_stmt)
+            deleted_count = res.rowcount
+            await db.commit()
+            return {
+                "status": "success",
+                "target": "benign",
+                "events_deleted": deleted_count,
+                "message": f"Purged {deleted_count} benign telemetry logs. All critical and suspicious events remain securely stored.",
+            }
+
+        elif target == "all":
+            if confirmation_phrase != "CONFIRM_DELETE_ALL":
+                from fastapi import HTTPException, status
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Critical safeguard: Deleting critical security logs requires confirmation_phrase='CONFIRM_DELETE_ALL'. Critical logs must be audited and verified prior to manual deletion.",
+                )
+            await db.execute(delete(IncidentEvent))
+            await db.execute(delete(Investigation))
+            await db.execute(delete(Recommendation))
+            await db.execute(delete(Incident))
+            await db.execute(delete(ModelPrediction))
+            await db.execute(delete(Alert))
+            del_events = await db.execute(delete(SecurityEvent))
+            await db.commit()
+            return {
+                "status": "success",
+                "target": "all",
+                "events_deleted": del_events.rowcount,
+                "message": "Full telemetry and incident database reset successfully.",
+            }
+        else:
+            from fastapi import HTTPException, status
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown target: '{target}'. Supported targets are 'benign' and 'all'.",
+            )
+
+    @staticmethod
+    async def get_retention_policy_status(
+        db: AsyncSession,
+        retention_days: int = 7,
+    ) -> Dict[str, Any]:
+        """Return real-time metrics about the 7-day retention policy and eligible logs."""
+        from datetime import timedelta
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        crit_sub = EventService.get_critical_event_ids_subquery()
+
+        total_events = (await db.execute(select(func.count(SecurityEvent.id)))).scalar_one()
+
+        critical_events = (await db.execute(
+            select(func.count(SecurityEvent.id)).where(
+                SecurityEvent.id.in_(select(crit_sub.c.event_id))
+            )
+        )).scalar_one()
+
+        benign_events = total_events - critical_events
+
+        eligible_for_auto_purge = (await db.execute(
+            select(func.count(SecurityEvent.id)).where(
+                SecurityEvent.timestamp < cutoff,
+                SecurityEvent.id.not_in(select(crit_sub.c.event_id)),
+            )
+        )).scalar_one()
+
+        return {
+            "retention_policy_days": retention_days,
+            "auto_retention_enabled": True,
+            "cutoff_timestamp": cutoff.isoformat(),
+            "total_events": total_events,
+            "benign_events": benign_events,
+            "critical_suspicious_events": critical_events,
+            "eligible_for_auto_purge": eligible_for_auto_purge,
+            "policy_rule": "Routine benign logs older than 7 days are automatically purged. Critical & suspicious security logs are permanently preserved until verified and manually authorized.",
+        }
+

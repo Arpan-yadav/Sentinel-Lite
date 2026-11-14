@@ -42,13 +42,32 @@ async def upload_csv_events(
 
 @router.post("/seed-authentic", status_code=status.HTTP_200_OK)
 async def seed_authentic_events(
+    reset: bool = Query(False, description="If True, clears previous telemetry & incidents before seeding clean baseline"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """Ingest authentic benchmark security events and auto-correlate incidents on demand."""
     from pathlib import Path
+    from sqlalchemy import delete
     from app.services.detection_service import DetectionService
     from app.services.incident_service import IncidentService
+    from app.models.incident_event import IncidentEvent
+    from app.models.investigation import Investigation
+    from app.models.recommendation import Recommendation
+    from app.models.incident import Incident
+    from app.models.alert import SecurityAlert
+    from app.models.model_prediction import ModelPrediction
+    from app.models.security_event import SecurityEvent
+
+    if reset:
+        await db.execute(delete(IncidentEvent))
+        await db.execute(delete(Investigation))
+        await db.execute(delete(Recommendation))
+        await db.execute(delete(Incident))
+        await db.execute(delete(SecurityAlert))
+        await db.execute(delete(ModelPrediction))
+        await db.execute(delete(SecurityEvent))
+        await db.commit()
 
     csv_candidates = [
         Path("data/authentic/sentinellite_authentic_events.csv"),
@@ -86,6 +105,41 @@ async def seed_authentic_events(
         "incidents_created": incidents_created,
         "message": f"Successfully loaded {inserted} events and generated {incidents_created} incidents.",
     }
+
+
+@router.get("/retention-status")
+async def get_retention_status(
+    days: int = Query(7, ge=1, le=365, description="Retention window in days"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Check retention policy status and counts of benign vs critical records."""
+    return await EventService.get_retention_policy_status(db, retention_days=days)
+
+
+@router.post("/retention-cleanup")
+async def trigger_retention_cleanup(
+    days: int = Query(7, ge=1, le=365, description="Purge benign logs older than this many days"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Execute 7-day retention cleanup. Deletes benign logs, strictly preserving critical/suspicious logs."""
+    return await EventService.run_retention_cleanup(db, retention_days=days)
+
+
+@router.delete("/purge")
+async def purge_events(
+    target: str = Query("benign", description="'benign' to clear normal logs; 'all' requires confirmation_phrase"),
+    confirmation_phrase: str = Query("", description="Required as 'CONFIRM_DELETE_ALL' if target is 'all'"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Purge telemetry events. Critical logs require explicit manual authorization."""
+    return await EventService.purge_telemetry(
+        db,
+        target=target,
+        confirmation_phrase=confirmation_phrase,
+    )
 
 
 @router.get("/", response_model=List[SecurityEventResponse])

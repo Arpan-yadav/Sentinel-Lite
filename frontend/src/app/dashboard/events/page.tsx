@@ -14,7 +14,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
+  Trash2,
 } from "lucide-react";
+import { RetentionModal } from "@/components/events/retention-modal";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
@@ -24,6 +26,7 @@ export default function EventsPage() {
   const [searchIp, setSearchIp] = useState("");
   const [protocolFilter, setProtocolFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [retentionModalOpen, setRetentionModalOpen] = useState(false);
 
   const pageSize = 50;
 
@@ -143,13 +146,22 @@ export default function EventsPage() {
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setRetentionModalOpen(true)}
+            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-red-500/30 hover:border-red-500 text-red-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+            title="Manage 7-day log retention, benign purge, and verified deletion"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Retention & Delete
+          </button>
+
+          <button
             onClick={handleSeedAuthentic}
             disabled={uploading}
             className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-            title="Seed authentic CICIDS2017 benchmark dataset"
+            title="Append another batch of 12,500 authentic CICIDS2017 events to simulate live streaming telemetry"
           >
             <Database className={`h-3.5 w-3.5 ${uploading ? "animate-spin" : ""}`} />
-            {uploading ? "Ingesting..." : "⚡ Ingest Benchmark"}
+            {uploading ? "Ingesting..." : "⚡ Ingest +12.5k Events"}
           </button>
 
           <button
@@ -324,6 +336,12 @@ export default function EventsPage() {
           </div>
         </div>
       </div>
+
+      <RetentionModal
+        isOpen={retentionModalOpen}
+        onClose={() => setRetentionModalOpen(false)}
+        onSuccess={fetchEvents}
+      />
     </div>
   );
 }

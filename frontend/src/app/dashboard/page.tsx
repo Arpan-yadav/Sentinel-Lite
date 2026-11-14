@@ -15,9 +15,12 @@ import {
   Database,
   Play,
   RefreshCw,
+  RotateCcw,
   ShieldAlert,
+  Trash2,
   Zap,
 } from "lucide-react";
+import { RetentionModal } from "@/components/events/retention-modal";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -27,6 +30,7 @@ export default function DashboardPage() {
   const [detecting, setDetecting] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [detectionMsg, setDetectionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [retentionModalOpen, setRetentionModalOpen] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
   const fetchData = useCallback(async () => {
@@ -82,16 +86,18 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSeedAuthentic = async () => {
+  const handleSeedAuthentic = async (reset = false) => {
     try {
       setSeeding(true);
       setDetectionMsg(null);
-      const res = await api.post("/events/seed-authentic");
+      const res = await api.post(`/events/seed-authentic${reset ? "?reset=true" : ""}`);
       const ingested = res.data.events_ingested ?? 0;
       const incs = res.data.incidents_created ?? 0;
       setDetectionMsg({
         type: "success",
-        text: `Authentic Ingestion Complete: Successfully loaded ${ingested.toLocaleString()} benchmark telemetry events and correlated ${incs} active security incidents!`,
+        text: reset
+          ? `Baseline Reset Complete: Database restored to ${ingested.toLocaleString()} authentic benchmark events and ${incs} correlated incidents.`
+          : `Streaming Ingestion: Ingested +${ingested.toLocaleString()} events and updated correlated incident clusters!`,
       });
       await fetchData();
     } catch {
@@ -160,13 +166,34 @@ export default function DashboardPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={handleSeedAuthentic}
+            onClick={() => setRetentionModalOpen(true)}
+            className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-red-500/30 hover:border-red-500 text-red-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+            title="Manage 7-day log retention, benign purge, and verified deletion"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Retention & Delete
+          </button>
+
+          {stats && stats.total_events > 12500 && (
+            <button
+              onClick={() => handleSeedAuthentic(true)}
+              disabled={seeding}
+              className="px-3 py-2 rounded-lg bg-(--background-card) border border-amber-500/30 hover:border-amber-500 text-amber-400 font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              title="Reset database back to the standard 12,500 baseline"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset to 12.5k Baseline
+            </button>
+          )}
+
+          <button
+            onClick={() => handleSeedAuthentic(false)}
             disabled={seeding}
             className="px-3.5 py-2.5 rounded-lg bg-(--background-card) border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 font-mono font-bold text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-            title="Seed authentic CICIDS2017 benchmark dataset & correlate incidents"
+            title="Ingest another batch of authentic CICIDS2017 events to simulate continuous live sensor streaming"
           >
             <Database className={`h-3.5 w-3.5 ${seeding ? "animate-spin" : ""}`} />
-            {seeding ? "Seeding..." : "⚡ Seed Authentic Data"}
+            {seeding ? "Ingesting..." : "⚡ Ingest +12.5k Events"}
           </button>
 
           <button
@@ -302,7 +329,7 @@ export default function DashboardPage() {
               <div className="p-8 text-center text-(--foreground-muted) font-mono text-xs border border-dashed border-(--border) rounded-xl space-y-3">
                 <p>No incidents detected in the active database.</p>
                 <button
-                  onClick={handleSeedAuthentic}
+                  onClick={() => handleSeedAuthentic(false)}
                   disabled={seeding}
                   className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs inline-flex items-center gap-2 transition-all cursor-pointer shadow-sm"
                 >
@@ -328,6 +355,12 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <RetentionModal
+        isOpen={retentionModalOpen}
+        onClose={() => setRetentionModalOpen(false)}
+        onSuccess={fetchData}
+      />
     </div>
   );
 }

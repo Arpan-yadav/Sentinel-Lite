@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     KEEP_ALIVE_ENABLED: bool = True
     KEEP_ALIVE_INTERVAL_SECONDS: int = 600
 
+    # Telemetry Log Retention & Deletion Policy
+    LOG_RETENTION_DAYS: int = 7
+    AUTO_RETENTION_CLEANUP_ENABLED: bool = True
+    RETENTION_CHECK_INTERVAL_SECONDS: int = 3600
+
     # CORS – comma-separated or JSON list
     CORS_ORIGINS: str = "https://sentinel-lite-bice.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000"
 

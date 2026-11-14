@@ -68,6 +68,42 @@ async def _keep_alive_worker() -> None:
         await asyncio.sleep(max(60, settings.KEEP_ALIVE_INTERVAL_SECONDS))
 
 
+async def _retention_worker() -> None:
+    """Periodically execute 7-day log retention policy in the background.
+
+    Automatically deletes benign ('good') telemetry logs older than 7 days,
+    while strictly preserving all critical & suspicious attack logs.
+    """
+    if not settings.AUTO_RETENTION_CLEANUP_ENABLED:
+        logger.info("[Retention] Auto-retention policy disabled.")
+        return
+
+    # Wait 60s after startup before first retention check
+    await asyncio.sleep(60)
+
+    while True:
+        try:
+            from app.services.event_service import EventService
+            from app.core.database import async_session
+
+            async with async_session() as session:
+                res = await EventService.run_retention_cleanup(
+                    session,
+                    retention_days=settings.LOG_RETENTION_DAYS,
+                )
+                logger.info(
+                    f"[Retention] 7-Day Retention Cycle: Purged {res['benign_events_deleted']} benign logs, "
+                    f"preserved {res['critical_events_preserved']} critical/suspicious logs."
+                )
+        except asyncio.CancelledError:
+            logger.info("[Retention] Worker cancelled during shutdown.")
+            break
+        except Exception as exc:
+            logger.warning(f"[Retention] Cleanup cycle encountered error: {exc}")
+
+        await asyncio.sleep(max(300, settings.RETENTION_CHECK_INTERVAL_SECONDS))
+
+
 async def _seed_default_users() -> None:
     """Create default admin and analyst users on first startup if they don't exist."""
     from app.models.user import User, UserRole
@@ -115,12 +151,23 @@ async def lifespan(application: FastAPI):
     if settings.KEEP_ALIVE_ENABLED:
         keepalive_task = asyncio.create_task(_keep_alive_worker())
 
+    retention_task = None
+    if settings.AUTO_RETENTION_CLEANUP_ENABLED:
+        retention_task = asyncio.create_task(_retention_worker())
+
     yield
 
     if keepalive_task:
         keepalive_task.cancel()
         try:
             await keepalive_task
+        except asyncio.CancelledError:
+            pass
+
+    if retention_task:
+        retention_task.cancel()
+        try:
+            await retention_task
         except asyncio.CancelledError:
             pass
 
