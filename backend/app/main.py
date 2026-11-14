@@ -148,6 +148,24 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api")
 
 
+@app.get("/", tags=["Root"])
+async def root():
+    """Root entry point with service metadata and documentation links."""
+    return {
+        "project": settings.PROJECT_NAME,
+        "status": "online",
+        "description": "AI-driven Security Operations Center (AI-SOC) API",
+        "version": "0.1.0",
+        "endpoints": {
+            "docs": "/docs",
+            "redoc": "/redoc",
+            "health": "/health",
+            "api_v1": "/api/v1",
+        },
+        "keep_alive": _keep_alive_stats,
+    }
+
+
 @app.get("/health", tags=["Health"])
 @app.get("/api/v1/health", tags=["Health"])
 async def health_check():

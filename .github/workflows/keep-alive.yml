@@ -16,7 +16,7 @@ jobs:
         run: |
           TARGET_URL="${{ secrets.RENDER_BACKEND_URL }}"
           if [ -z "$TARGET_URL" ]; then
-            TARGET_URL="https://sentinellite-api.onrender.com"
+            TARGET_URL="https://sentinellite-api-mwal.onrender.com"
           fi
           echo "Sending keepalive heartbeat to: $TARGET_URL/health"
           STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$TARGET_URL/health" || echo "000")
